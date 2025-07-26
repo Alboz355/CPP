@@ -96,39 +96,42 @@ export function OnboardingPage({ onWalletCreated }: OnboardingPageProps) {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-background to-accent/20">
+      <div className="w-full max-w-md modern-card p-8 scale-in">
+        <div className="text-center mb-6">
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
             <Wallet className="h-6 w-6 text-blue-600" />
           </div>
-          <CardTitle className="text-2xl">Bienvenue</CardTitle>
-          <CardDescription>Créez un portefeuille multi-crypto ou importez un portefeuille existant</CardDescription>
-        </CardHeader>
-        <CardContent>
+          <h1 className="heading-1 mb-2">Bienvenue</h1>
+          <p className="body-text">Créez un portefeuille multi-crypto ou importez un portefeuille existant</p>
+        </div>
+        <div>
           <Tabs defaultValue="create" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-2 rounded-xl bg-accent/30">
               <TabsTrigger value="create">Créer</TabsTrigger>
               <TabsTrigger value="import">Importer</TabsTrigger>
             </TabsList>
 
             <TabsContent value="create" className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="wallet-name">Nom du portefeuille (optionnel)</Label>
+                <label htmlFor="wallet-name" className="text-sm font-medium text-foreground">
+                  Nom du portefeuille (optionnel)
+                </label>
                 <Input
                   id="wallet-name"
                   placeholder="Mon Portefeuille Multi-Crypto"
                   value={walletName}
                   onChange={(e) => setWalletName(e.target.value)}
+                  className="rounded-xl border-border/50 bg-accent/30"
                 />
               </div>
 
               {generatedSeed && (
                 <div className="space-y-3">
-                  <div className="rounded-lg bg-yellow-50 p-4">
+                  <div className="rounded-xl bg-yellow-500/10 p-4 border border-yellow-500/20">
                     <div className="flex items-start space-x-2">
-                      <Shield className="h-5 w-5 text-yellow-600 mt-0.5" />
-                      <div className="text-sm text-yellow-800">
+                      <Shield className="h-5 w-5 text-yellow-500 mt-0.5" />
+                      <div className="text-sm text-yellow-500">
                         <p className="font-medium">Phrase de récupération générée !</p>
                         <p>Sauvegardez cette phrase en lieu sûr. Elle permet de récupérer tous vos comptes crypto.</p>
                       </div>
@@ -137,12 +140,24 @@ export function OnboardingPage({ onWalletCreated }: OnboardingPageProps) {
 
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <Label>Votre phrase de récupération (12 mots)</Label>
+                      <label className="text-sm font-medium text-foreground">
+                        Votre phrase de récupération (12 mots)
+                      </label>
                       <div className="flex space-x-2">
-                        <Button variant="ghost" size="icon" onClick={() => setShowSeed(!showSeed)}>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => setShowSeed(!showSeed)}
+                          className="h-8 w-8 rounded-lg hover:bg-accent/50"
+                        >
                           {showSeed ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={copySeedPhrase}>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={copySeedPhrase}
+                          className="h-8 w-8 rounded-lg hover:bg-accent/50"
+                        >
                           <Copy className="h-4 w-4" />
                         </Button>
                       </div>
@@ -151,7 +166,7 @@ export function OnboardingPage({ onWalletCreated }: OnboardingPageProps) {
                       value={showSeed ? generatedSeed : "••• ••• ••• ••• ••• ••• ••• ••• ••• ••• ••• •••"}
                       readOnly
                       rows={3}
-                      className="font-mono text-sm"
+                      className="font-mono text-sm rounded-xl border-border/50 bg-accent/30"
                     />
                   </div>
 
@@ -162,15 +177,15 @@ export function OnboardingPage({ onWalletCreated }: OnboardingPageProps) {
                       checked={seedConfirmed}
                       onChange={(e) => setSeedConfirmed(e.target.checked)}
                     />
-                    <Label htmlFor="seed-confirmed" className="text-sm">
+                    <label htmlFor="seed-confirmed" className="text-sm text-foreground">
                       J'ai sauvegardé ma phrase de récupération en lieu sûr
-                    </Label>
+                    </label>
                   </div>
                 </div>
               )}
 
-              <div className="rounded-lg bg-blue-50 p-4">
-                <div className="text-sm text-blue-800">
+              <div className="rounded-xl bg-blue-500/10 p-4 border border-blue-500/20">
+                <div className="text-sm text-blue-500">
                   <p className="font-medium">Cryptomonnaies supportées :</p>
                   <ul className="mt-1 list-disc list-inside space-y-1">
                     <li>Bitcoin (BTC)</li>
@@ -182,42 +197,52 @@ export function OnboardingPage({ onWalletCreated }: OnboardingPageProps) {
               </div>
 
               {!generatedSeed ? (
-                <Button onClick={handleCreateWallet} className="w-full">
+                <button onClick={handleCreateWallet} className="ios-button-primary w-full">
                   Générer un nouveau portefeuille
-                </Button>
+                </button>
               ) : (
-                <Button onClick={handleCreateWallet} className="w-full" disabled={!seedConfirmed}>
+                <button 
+                  onClick={handleCreateWallet} 
+                  className="ios-button-primary w-full disabled:opacity-50" 
+                  disabled={!seedConfirmed}
+                >
                   Continuer avec ce portefeuille
-                </Button>
+                </button>
               )}
             </TabsContent>
 
             <TabsContent value="import" className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="wallet-name-import">Nom du portefeuille (optionnel)</Label>
+                <label htmlFor="wallet-name-import" className="text-sm font-medium text-foreground">
+                  Nom du portefeuille (optionnel)
+                </label>
                 <Input
                   id="wallet-name-import"
                   placeholder="Portefeuille Importé"
                   value={walletName}
                   onChange={(e) => setWalletName(e.target.value)}
+                  className="rounded-xl border-border/50 bg-accent/30"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="seed-phrase">Phrase de récupération (12 ou 24 mots)</Label>
+                <label htmlFor="seed-phrase" className="text-sm font-medium text-foreground">
+                  Phrase de récupération (12 ou 24 mots)
+                </label>
                 <Textarea
                   id="seed-phrase"
                   placeholder="Entrez votre phrase de récupération..."
                   value={seedPhrase}
                   onChange={(e) => setSeedPhrase(e.target.value)}
                   rows={3}
+                  className="rounded-xl border-border/50 bg-accent/30"
                 />
               </div>
 
-              <div className="rounded-lg bg-blue-50 p-4">
+              <div className="rounded-xl bg-blue-500/10 p-4 border border-blue-500/20">
                 <div className="flex items-start space-x-2">
-                  <Key className="h-5 w-5 text-blue-600 mt-0.5" />
-                  <div className="text-sm text-blue-800">
+                  <Key className="h-5 w-5 text-blue-500 mt-0.5" />
+                  <div className="text-sm text-blue-500">
                     <p className="font-medium">Sécurité</p>
                     <p>
                       Votre phrase de récupération génère automatiquement des comptes pour Bitcoin, Ethereum et
@@ -227,13 +252,17 @@ export function OnboardingPage({ onWalletCreated }: OnboardingPageProps) {
                 </div>
               </div>
 
-              <Button onClick={handleImportWallet} className="w-full" disabled={!seedPhrase.trim()}>
+              <button 
+                onClick={handleImportWallet} 
+                className="ios-button-primary w-full disabled:opacity-50" 
+                disabled={!seedPhrase.trim()}
+              >
                 Importer le portefeuille
-              </Button>
+              </button>
             </TabsContent>
           </Tabs>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   )
 }

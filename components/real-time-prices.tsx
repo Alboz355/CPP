@@ -236,56 +236,71 @@ export function RealTimePrices() {
   }
 
   return (
-    <Card>
-      <CardHeader>
+    <div className="modern-card p-6">
+      <div className="mb-4">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">Prix du marché</CardTitle>
+          <h3 className="heading-3">Prix du marché</h3>
           <div className="flex items-center space-x-2">
             {error && (
-              <div className="flex items-center space-x-1 text-yellow-600">
+              <div className="flex items-center space-x-1 text-yellow-500">
                 <AlertCircle className="h-4 w-4" />
                 <span className="text-xs">Mode hors ligne</span>
               </div>
             )}
-            <Button variant="ghost" size="sm" onClick={handleRefresh} disabled={isLoading}>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={handleRefresh} 
+              disabled={isLoading}
+              className="rounded-lg hover:bg-accent/50"
+            >
               <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
             </Button>
           </div>
         </div>
-        {lastUpdate && <p className="text-xs text-gray-500">Dernière mise à jour: {lastUpdate.toLocaleTimeString()}</p>}
-      </CardHeader>
-      <CardContent className="space-y-4">
+        {lastUpdate && (
+          <p className="caption-text">
+            Dernière mise à jour: {lastUpdate.toLocaleTimeString()}
+          </p>
+        )}
+      </div>
+      <div className="space-y-3">
         {prices.slice(0, 6).map((crypto) => (
-          <div key={crypto.symbol} className="flex items-center justify-between">
+          <div 
+            key={crypto.symbol} 
+            className="flex items-center justify-between p-3 rounded-lg bg-accent/30 hover:bg-accent/50 transition-colors"
+          >
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
-                <span className="font-bold text-sm">{crypto.symbol}</span>
+              <div className="w-10 h-10 bg-gradient-to-br from-primary/20 to-primary/10 rounded-xl flex items-center justify-center">
+                <span className="font-bold text-sm text-primary">{crypto.symbol}</span>
               </div>
               <div>
-                <p className="font-medium">{crypto.name}</p>
-                <p className="text-sm text-gray-600">
+                <p className="font-medium text-foreground">{crypto.name}</p>
+                <p className="text-sm text-muted-foreground">
                   Cap: ${crypto.marketCap > 0 ? (crypto.marketCap / 1e9).toFixed(1) + "B" : "N/A"}
                 </p>
               </div>
             </div>
             <div className="text-right">
-              <p className="font-medium">
+              <p className="font-semibold text-foreground">
                 ${crypto.price < 1 ? crypto.price.toFixed(4) : crypto.price.toLocaleString()}
               </p>
               <div className="flex items-center space-x-1">
                 {crypto.change24h >= 0 ? (
-                  <TrendingUp className="h-3 w-3 text-green-600" />
+                  <TrendingUp className="h-3 w-3 text-green-500" />
                 ) : (
-                  <TrendingDown className="h-3 w-3 text-red-600" />
+                  <TrendingDown className="h-3 w-3 text-red-500" />
                 )}
-                <span className={`text-xs ${crypto.change24h >= 0 ? "text-green-600" : "text-red-600"}`}>
+                <span className={`text-xs font-medium ${
+                  crypto.change24h >= 0 ? "text-green-500" : "text-red-500"
+                }`}>
                   {crypto.change24h.toFixed(2)}%
                 </span>
               </div>
             </div>
           </div>
         ))}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }

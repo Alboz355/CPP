@@ -22,6 +22,7 @@ import { RealTimePrices } from "@/components/real-time-prices"
 import { LoadingFallback } from "@/components/loading-fallback"
 import { CryptoList } from "@/components/crypto-list"
 import { MtPelerinWidget } from "@/components/mt-pelerin-widget"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 interface MainDashboardProps {
   walletData: any
@@ -110,206 +111,263 @@ export function MainDashboard({ walletData, onNavigate }: MainDashboardProps) {
 
   return (
     <>
-      <div className="min-h-screen p-4 space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Bonjour !</h1>
-            <p className="text-gray-600">{walletData.name}</p>
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/20">
+        {/* Header moderne avec safe area */}
+        <div className="mobile-header">
+          <div className="flex items-center justify-between p-4">
+            <div className="fade-in">
+              <h1 className="heading-2 bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                Bonjour !
+              </h1>
+              <p className="caption-text">{walletData.name}</p>
+            </div>
+            <div className="flex items-center space-x-2">
+              <ThemeToggle />
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => onNavigate("settings")}
+                className="h-10 w-10 rounded-xl hover:bg-accent/50"
+              >
+                <Settings className="h-5 w-5" />
+              </Button>
+            </div>
           </div>
-          <Button variant="ghost" size="icon" onClick={() => onNavigate("settings")}>
-            <Settings className="h-5 w-5" />
-          </Button>
         </div>
-
-        {/* Balance Card */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg">Solde total</CardTitle>
-              <Button variant="ghost" size="icon" onClick={() => setShowBalance(!showBalance)}>
+        {/* Contenu principal */}
+        <div className="mobile-content p-4 space-y-6">
+          {/* Balance Card moderne */}
+          <div className="modern-card p-6 slide-up">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="heading-3">Solde total</h2>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => setShowBalance(!showBalance)}
+                className="h-8 w-8 rounded-lg hover:bg-accent/50"
+              >
                 {showBalance ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </Button>
             </div>
-          </CardHeader>
-          <CardContent>
+
             {isLoading ? (
-              <LoadingFallback message="Chargement des soldes..." />
+              <div className="space-y-3">
+                <div className="h-8 bg-muted/50 rounded-lg animate-pulse"></div>
+                <div className="h-4 bg-muted/30 rounded-lg animate-pulse w-1/2"></div>
+              </div>
             ) : (
-              <>
-                <div className="text-3xl font-bold text-gray-900 mb-2">
+              <div className="space-y-3">
+                <div className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
                   {showBalance ? `$${totalBalance.toLocaleString()}` : "••••••"}
                 </div>
                 {lastUpdate && (
-                  <div className="text-xs text-gray-400">Dernière mise à jour: {lastUpdate.toLocaleTimeString()}</div>
+                  <div className="caption-text">
+                    Dernière mise à jour: {lastUpdate.toLocaleTimeString()}
+                  </div>
                 )}
-                <div className="flex items-center space-x-2">
-                  <TrendingUp className="h-4 w-4 text-green-600" />
-                  <span className="text-green-600 text-sm font-medium">+12.5% (24h)</span>
+                <div className="flex items-center space-x-2 text-green-500">
+                  <TrendingUp className="h-4 w-4" />
+                  <span className="text-sm font-medium">+12.5% (24h)</span>
                 </div>
-              </>
+              </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
 
-        {/* Wallet Addresses SANS clés publiques */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Adresses du portefeuille</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+          {/* Wallet Addresses avec design moderne */}
+          <div className="modern-card p-6 fade-in">
+            <h3 className="heading-3 mb-4">Adresses du portefeuille</h3>
+            <div className="space-y-4">
             {/* Ethereum */}
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-700">Ethereum (EIP-55)</p>
-                <p className="font-mono text-sm break-all text-gray-900">
+            <div className="flex items-center justify-between p-3 rounded-lg bg-accent/30 hover:bg-accent/50 transition-colors">
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-foreground">Ethereum (EIP-55)</p>
+                <p className="font-mono text-xs break-all text-muted-foreground truncate">
                   {walletData.addresses?.ethereum || "Non disponible"}
                 </p>
               </div>
               <Button
                 variant="ghost"
-                size="icon"
+                size="sm"
                 onClick={() => copyAddress(walletData.addresses?.ethereum || "", "ETH")}
+                className="ml-2 h-8 w-8 rounded-lg hover:bg-accent"
               >
                 <Copy className="h-4 w-4" />
               </Button>
             </div>
 
             {/* Bitcoin */}
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-700">Bitcoin (P2PKH Legacy)</p>
-                <p className="font-mono text-sm break-all text-gray-900">
+            <div className="flex items-center justify-between p-3 rounded-lg bg-accent/30 hover:bg-accent/50 transition-colors">
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-foreground">Bitcoin (P2PKH Legacy)</p>
+                <p className="font-mono text-xs break-all text-muted-foreground truncate">
                   {walletData.addresses?.bitcoin || "Non disponible"}
                 </p>
               </div>
               <Button
                 variant="ghost"
-                size="icon"
+                size="sm"
                 onClick={() => copyAddress(walletData.addresses?.bitcoin || "", "BTC")}
+                className="ml-2 h-8 w-8 rounded-lg hover:bg-accent"
               >
                 <Copy className="h-4 w-4" />
               </Button>
             </div>
 
             {/* Algorand */}
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-700">Algorand (Base32)</p>
-                <p className="font-mono text-sm break-all text-gray-900">
+            <div className="flex items-center justify-between p-3 rounded-lg bg-accent/30 hover:bg-accent/50 transition-colors">
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-foreground">Algorand (Base32)</p>
+                <p className="font-mono text-xs break-all text-muted-foreground truncate">
                   {walletData.addresses?.algorand || "Non disponible"}
                 </p>
               </div>
               <Button
                 variant="ghost"
-                size="icon"
+                size="sm"
                 onClick={() => copyAddress(walletData.addresses?.algorand || "", "ALGO")}
+                className="ml-2 h-8 w-8 rounded-lg hover:bg-accent"
               >
                 <Copy className="h-4 w-4" />
               </Button>
             </div>
-          </CardContent>
-        </Card>
+            </div>
+          </div>
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-4 gap-4">
-          <Button onClick={() => onNavigate("send")} className="h-16 flex-col space-y-2">
-            <Send className="h-6 w-6" />
-            <span>Envoyer</span>
-          </Button>
-          <Button onClick={() => onNavigate("receive")} variant="outline" className="h-16 flex-col space-y-2">
-            <Download className="h-6 w-6" />
-            <span>Recevoir</span>
-          </Button>
-          <Button
-            onClick={() => openMtPelerin("buy")}
-            variant="outline"
-            className="h-16 flex-col space-y-2 bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200 hover:from-blue-100 hover:to-purple-100"
-          >
-            <ShoppingCart className="h-6 w-6 text-blue-600" />
-            <span className="text-blue-600 font-medium">Mt Pelerin</span>
-          </Button>
-          <Button
-            onClick={() => onNavigate("tpe")}
-            variant="outline"
-            className="h-16 flex-col space-y-2 bg-gradient-to-r from-green-50 to-emerald-50 border-green-200 hover:from-green-100 hover:to-emerald-100"
-          >
-            <CreditCard className="h-6 w-6 text-green-600" />
-            <span className="text-green-600 font-medium">Mode TPE</span>
-          </Button>
-        </div>
+          {/* Quick Actions avec design iOS moderne */}
+          <div className="grid grid-cols-2 gap-4 fade-in">
+            <button 
+              onClick={() => onNavigate("send")} 
+              className="ios-button-primary h-20 flex-col space-y-2 hover-lift"
+            >
+              <Send className="h-6 w-6" />
+              <span className="text-sm font-medium">Envoyer</span>
+            </button>
+            <button 
+              onClick={() => onNavigate("receive")} 
+              className="ios-button-secondary h-20 flex-col space-y-2 hover-lift"
+            >
+              <Download className="h-6 w-6" />
+              <span className="text-sm font-medium">Recevoir</span>
+            </button>
+            <button
+              onClick={() => openMtPelerin("buy")}
+              className="ios-button-secondary h-20 flex-col space-y-2 hover-lift bg-gradient-to-r from-blue-500/10 to-purple-500/10 border-blue-500/20 hover:from-blue-500/20 hover:to-purple-500/20"
+            >
+              <ShoppingCart className="h-6 w-6 text-blue-500" />
+              <span className="text-sm font-medium text-blue-500">Mt Pelerin</span>
+            </button>
+            <button
+              onClick={() => onNavigate("tpe")}
+              className="ios-button-secondary h-20 flex-col space-y-2 hover-lift bg-gradient-to-r from-green-500/10 to-emerald-500/10 border-green-500/20 hover:from-green-500/20 hover:to-emerald-500/20"
+            >
+              <CreditCard className="h-6 w-6 text-green-500" />
+              <span className="text-sm font-medium text-green-500">Mode TPE</span>
+            </button>
+          </div>
 
-        {/* Crypto Holdings */}
-        <CryptoList walletData={walletData} onSend={(crypto) => onNavigate("send")} />
+          {/* Crypto Holdings */}
+          <div className="fade-in">
+            <CryptoList walletData={walletData} onSend={(crypto) => onNavigate("send")} />
+          </div>
 
-        {/* Prix du marché */}
-        <RealTimePrices />
+          {/* Prix du marché */}
+          <div className="fade-in">
+            <RealTimePrices />
+          </div>
 
-        {/* Recent Transactions */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg">Transactions récentes</CardTitle>
-              <Button variant="ghost" size="sm" onClick={() => onNavigate("history")}>
+          {/* Recent Transactions avec design moderne */}
+          <div className="modern-card p-6 fade-in">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="heading-3">Transactions récentes</h3>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => onNavigate("history")}
+                className="rounded-lg hover:bg-accent/50"
+              >
                 Voir tout
               </Button>
             </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
+            <div className="space-y-3">
             {recentTransactions.map((tx, index) => (
-              <div key={index} className="flex items-center justify-between">
+              <div key={index} className="flex items-center justify-between p-3 rounded-lg hover:bg-accent/30 transition-colors">
                 <div className="flex items-center space-x-3">
                   <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                      tx.type === "received" ? "bg-green-100" : "bg-red-100"
+                    className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                      tx.type === "received" 
+                        ? "bg-green-500/10 text-green-500" 
+                        : "bg-red-500/10 text-red-500"
                     }`}
                   >
                     {tx.type === "received" ? (
-                      <Download className="h-4 w-4 text-green-600" />
+                      <Download className="h-5 w-5" />
                     ) : (
-                      <Send className="h-4 w-4 text-red-600" />
+                      <Send className="h-5 w-5" />
                     )}
                   </div>
                   <div>
-                    <p className="font-medium">
+                    <p className="text-sm font-medium text-foreground">
                       {tx.type === "received" ? "Reçu" : "Envoyé"} {tx.crypto}
                     </p>
-                    <p className="text-sm text-gray-600">{tx.time}</p>
+                    <p className="caption-text">{tx.time}</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className={`font-medium ${tx.type === "received" ? "text-green-600" : "text-red-600"}`}>
+                  <p className={`text-sm font-medium ${
+                    tx.type === "received" ? "text-green-500" : "text-red-500"
+                  }`}>
                     {tx.amount} {tx.crypto}
                   </p>
-                  <p className="text-sm text-gray-600">{tx.value}</p>
+                  <p className="caption-text">{tx.value}</p>
                 </div>
               </div>
             ))}
-          </CardContent>
-        </Card>
+            </div>
+          </div>
+        </div>
 
-        {/* Bottom Navigation */}
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t p-4">
-          <div className="flex justify-around max-w-md mx-auto">
-            <Button variant="ghost" size="sm" className="flex-col space-y-1">
+        {/* Bottom Navigation moderne */}
+        <div className="mobile-bottom-nav">
+          <div className="flex justify-around p-4 max-w-md mx-auto">
+            <Button variant="ghost" size="sm" className="flex-col space-y-1 h-16 w-16 rounded-xl hover:bg-accent/50">
               <Wallet className="h-5 w-5" />
-              <span className="text-xs">Portefeuille</span>
+              <span className="text-xs font-medium">Portefeuille</span>
             </Button>
-            <Button variant="ghost" size="sm" className="flex-col space-y-1" onClick={() => onNavigate("history")}>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="flex-col space-y-1 h-16 w-16 rounded-xl hover:bg-accent/50" 
+              onClick={() => onNavigate("history")}
+            >
               <History className="h-5 w-5" />
-              <span className="text-xs">Historique</span>
+              <span className="text-xs font-medium">Historique</span>
             </Button>
-            <Button variant="ghost" size="sm" className="flex-col space-y-1" onClick={() => openMtPelerin("buy")}>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="flex-col space-y-1 h-16 w-16 rounded-xl hover:bg-accent/50" 
+              onClick={() => openMtPelerin("buy")}
+            >
               <ShoppingCart className="h-5 w-5" />
-              <span className="text-xs">Acheter</span>
+              <span className="text-xs font-medium">Acheter</span>
             </Button>
-            <Button variant="ghost" size="sm" className="flex-col space-y-1" onClick={() => onNavigate("tpe")}>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="flex-col space-y-1 h-16 w-16 rounded-xl hover:bg-accent/50" 
+              onClick={() => onNavigate("tpe")}
+            >
               <CreditCard className="h-5 w-5" />
-              <span className="text-xs">TPE</span>
+              <span className="text-xs font-medium">TPE</span>
             </Button>
-            <Button variant="ghost" size="sm" className="flex-col space-y-1" onClick={() => onNavigate("settings")}>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="flex-col space-y-1 h-16 w-16 rounded-xl hover:bg-accent/50" 
+              onClick={() => onNavigate("settings")}
+            >
               <Settings className="h-5 w-5" />
-              <span className="text-xs">Paramètres</span>
+              <span className="text-xs font-medium">Paramètres</span>
             </Button>
           </div>
         </div>
