@@ -1,0 +1,29 @@
+# Fichier : codemagic.yaml
+
+workflows:
+  ios-app:
+    name: iOS App Build
+    environment:
+      # On demande à Codemagic d'utiliser un Mac avec Xcode
+      xcode: latest
+      node: latest
+    scripts:
+      - name: Installer les dépendances
+        script: | 
+          npm install
+      - name: Construire l'application web
+        script: | 
+          npm run build
+      - name: Synchroniser avec le projet iOS natif
+        script: | 
+          npx cap sync ios
+      - name: Configurer la signature du code (essentiel)
+        script: | 
+          # Cette étape utilise les certificats que vous importerez dans l'interface de Codemagic
+          xcode-project use-profiles
+      - name: Construire le fichier IPA
+        script: | 
+          xcode-project build-ipa --workspace "$CM_BUILD_DIR/ios/App/App.xcworkspace" --scheme App
+    artifacts:
+      # On dit à Codemagic où trouver le fichier .ipa final
+      - build/ios/ipa/*.ipa
