@@ -1,10 +1,9 @@
 # Fichier : codemagic.yaml
 
 workflows:
-  ios-app-sideload: # J'ai renommé le workflow pour plus de clarté
+  ios-app-sideload:
     name: iOS App Build (pour Sideloadly)
     environment:
-      # On demande à Codemagic d'utiliser un Mac avec Xcode
       xcode: latest
       node: latest
     scripts:
@@ -17,14 +16,30 @@ workflows:
       - name: Synchroniser avec le projet iOS natif
         script: | 
           npx cap sync ios
-      # --- L'ÉTAPE DE SIGNATURE OFFICIELLE A ÉTÉ SUPPRIMÉE ---
-      # - name: Configurer la signature du code (essentiel)
-      #   script: | 
-      #     xcode-project use-profiles
-      - name: Construire le fichier IPA (Debug)
+      - name: Construire l'application (.app) sans signature
         script: | 
-          # On ajoute --configuration Debug pour créer une version pour le sideloading
-          xcode-project build-ipa --workspace "$CM_BUILD_DIR/ios/App/App.xcworkspace" --scheme App --configuration Debug
+          xcodebuild build \
+            -workspace "$CM_BUILD_DIR/ios/App/App.xcworkspace" \
+            -scheme App \
+            -configuration Debug \
+            -sdk iphoneos \
+            -derivedDataPath "$CM_BUILD_DIR/build/ios/derived_data" \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO
+      - name: Créer le fichier .ipa manuellement
+        script: | 
+          # On trouve le fichier .app qui vient d'être créé
+          APP_PATH=$(find $CM_BUILD_DIR/build/ios/derived_data -name "*.app" | head -n 1)
+          
+          # On crée le dossier nécessaire
+          mkdir -p "$CM_BUILD_DIR/build/ios/ipa/Payload"
+          
+          # On copie l'application dans ce dossier
+          cp -R "$APP_PATH" "$CM_BUILD_DIR/build/ios/ipa/Payload/"
+          
+          # On se déplace dans le dossier et on compresse pour créer le .ipa
+          cd "$CM_BUILD_DIR/build/ios/ipa"
+          zip -r "CryptoPayPro.ipa" "Payload"
     artifacts:
       # On dit à Codemagic où trouver le fichier .ipa final
       - build/ios/ipa/*.ipa
