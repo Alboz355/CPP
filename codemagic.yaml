@@ -1,8 +1,8 @@
 # Fichier : codemagic.yaml
 
 workflows:
-  ios-app:
-    name: iOS App Build
+  ios-app-sideload: # J'ai renommé le workflow pour plus de clarté
+    name: iOS App Build (pour Sideloadly)
     environment:
       # On demande à Codemagic d'utiliser un Mac avec Xcode
       xcode: latest
@@ -17,13 +17,14 @@ workflows:
       - name: Synchroniser avec le projet iOS natif
         script: | 
           npx cap sync ios
-      - name: Configurer la signature du code (essentiel)
+      # --- L'ÉTAPE DE SIGNATURE OFFICIELLE A ÉTÉ SUPPRIMÉE ---
+      # - name: Configurer la signature du code (essentiel)
+      #   script: | 
+      #     xcode-project use-profiles
+      - name: Construire le fichier IPA (Debug)
         script: | 
-          # Cette étape utilise les certificats que vous importerez dans l'interface de Codemagic
-          xcode-project use-profiles
-      - name: Construire le fichier IPA
-        script: | 
-          xcode-project build-ipa --workspace "$CM_BUILD_DIR/ios/App/App.xcworkspace" --scheme App
+          # On ajoute --configuration Debug pour créer une version pour le sideloading
+          xcode-project build-ipa --workspace "$CM_BUILD_DIR/ios/App/App.xcworkspace" --scheme App --configuration Debug
     artifacts:
       # On dit à Codemagic où trouver le fichier .ipa final
       - build/ios/ipa/*.ipa
