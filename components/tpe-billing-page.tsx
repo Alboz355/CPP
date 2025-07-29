@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ArrowLeft, Calculator, QrCode, Send, Bitcoin, Smartphone, CheckCircle, AlertTriangle } from "lucide-react"
+import { StandardizedHeader } from "@/components/standardized-header"
+import { Calculator, QrCode, Send, Bitcoin, Smartphone, CheckCircle, AlertTriangle } from "lucide-react"
 import type { AppState } from "@/app/page"
 
 interface TPEBillingPageProps {
@@ -134,10 +135,10 @@ export function TPEBillingPage({ onNavigate, walletData }: TPEBillingPageProps) 
               <CheckCircle className="h-8 w-8 text-green-600" />
             </div>
             <h2 className="text-xl font-bold text-green-800 mb-2">Demande envoyée !</h2>
-            <p className="text-gray-600 mb-4">
+            <p className="text-muted-foreground mb-4">
               La demande de paiement de {amount} {currency} a été envoyée au client.
             </p>
-            <div className="space-y-2 text-sm text-gray-500">
+            <div className="space-y-2 text-sm text-muted-foreground">
               <p>• Le client recevra un QR code pour payer</p>
               <p>• Vous serez notifié lors du paiement</p>
               <p>• Conversion automatique en CHFM disponible</p>
@@ -152,17 +153,15 @@ export function TPEBillingPage({ onNavigate, walletData }: TPEBillingPageProps) 
   }
 
   return (
-    <div className="min-h-screen p-4 space-y-6">
-      {/* Header */}
-      <div className="flex items-center space-x-4">
-        <Button variant="ghost" size="icon" onClick={() => onNavigate("tpe")}>
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <div>
-          <h1 className="text-2xl font-bold">Nouvelle Facture</h1>
-          <p className="text-gray-600">Créer une demande de paiement crypto</p>
-        </div>
-      </div>
+    <div className="min-h-screen bg-background">
+      <StandardizedHeader
+        title="Nouvelle Facture"
+        subtitle="Créer une demande de paiement crypto"
+        backPage="tpe"
+        onNavigate={onNavigate}
+      />
+      
+      <div className="p-4 space-y-6">
 
       {/* Formulaire de facturation */}
       <Card>
@@ -225,7 +224,7 @@ export function TPEBillingPage({ onNavigate, walletData }: TPEBillingPageProps) 
               value={customerEmail}
               onChange={(e) => setCustomerEmail(e.target.value)}
             />
-            <p className="text-sm text-gray-600">Le client recevra un lien de paiement par email</p>
+            <p className="text-sm text-muted-foreground">Le client recevra un lien de paiement par email</p>
           </div>
 
           {/* Méthode de paiement */}
@@ -269,19 +268,19 @@ export function TPEBillingPage({ onNavigate, walletData }: TPEBillingPageProps) 
           <CardContent>
             <div className="grid grid-cols-2 gap-4">
               <div className="text-center p-3 bg-orange-50 rounded-lg">
-                <p className="text-sm text-gray-600">Bitcoin</p>
+                <p className="text-sm text-muted-foreground">Bitcoin</p>
                 <p className="font-bold text-orange-600">{calculateCryptoAmount(amount, "BTC")} BTC</p>
               </div>
-              <div className="text-center p-3 bg-blue-50 rounded-lg">
-                <p className="text-sm text-gray-600">Ethereum</p>
-                <p className="font-bold text-blue-600">{calculateCryptoAmount(amount, "ETH")} ETH</p>
+              <div className="text-center p-3 bg-accent/50 rounded-lg">
+                <p className="text-sm text-muted-foreground">Ethereum</p>
+                <p className="font-bold text-primary">{calculateCryptoAmount(amount, "ETH")} ETH</p>
               </div>
               <div className="text-center p-3 bg-green-50 rounded-lg">
-                <p className="text-sm text-gray-600">USDT</p>
+                <p className="text-sm text-muted-foreground">USDT</p>
                 <p className="font-bold text-green-600">{calculateCryptoAmount(amount, "USDT")} USDT</p>
               </div>
               <div className="text-center p-3 bg-purple-50 rounded-lg">
-                <p className="text-sm text-gray-600">CHFM</p>
+                <p className="text-sm text-muted-foreground">CHFM</p>
                 <p className="font-bold text-purple-600">{amount} CHFM</p>
               </div>
             </div>
@@ -298,7 +297,7 @@ export function TPEBillingPage({ onNavigate, walletData }: TPEBillingPageProps) 
         >
           {isProcessing ? (
             <>
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground mr-2"></div>
               Envoi en cours...
             </>
           ) : (
@@ -321,6 +320,7 @@ export function TPEBillingPage({ onNavigate, walletData }: TPEBillingPageProps) 
             </div>
           </div>
         </div>
+      </div>
       </div>
     </div>
   )

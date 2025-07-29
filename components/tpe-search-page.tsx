@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { ArrowLeft, Search, Bluetooth, Usb, Wifi, RefreshCw, CheckCircle, AlertCircle, Loader2 } from "lucide-react"
+import { StandardizedHeader } from "@/components/standardized-header"
+import { Search, Bluetooth, Usb, Wifi, RefreshCw, CheckCircle, AlertCircle, Loader2 } from "lucide-react"
 import type { AppState } from "@/app/page"
 
 interface TPEDevice {
@@ -143,13 +144,13 @@ export function TPESearchPage({ onNavigate }: TPESearchPageProps) {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "connected":
-        return "bg-green-100 text-green-800"
+        return "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200"
       case "pairing":
-        return "bg-yellow-100 text-yellow-800"
+        return "bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200"
       case "error":
-        return "bg-red-100 text-red-800"
+        return "bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200"
       default:
-        return "bg-gray-100 text-gray-800"
+        return "bg-muted text-muted-foreground"
     }
   }
 
@@ -173,17 +174,15 @@ export function TPESearchPage({ onNavigate }: TPESearchPageProps) {
   )
 
   return (
-    <div className="min-h-screen p-4 space-y-6">
-      {/* Header */}
-      <div className="flex items-center space-x-4">
-        <Button variant="ghost" size="icon" onClick={() => onNavigate("tpe")}>
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <div>
-          <h1 className="text-2xl font-bold">Rechercher TPE</h1>
-          <p className="text-gray-600">Scanner les terminaux disponibles</p>
-        </div>
-      </div>
+    <div className="min-h-screen bg-background">
+      <StandardizedHeader
+        title="Rechercher TPE"
+        subtitle="Scanner les terminaux disponibles"
+        backPage="tpe"
+        onNavigate={onNavigate}
+      />
+      
+      <div className="p-4 space-y-6">
 
       {/* Contrôles de recherche */}
       <Card>
@@ -193,7 +192,7 @@ export function TPESearchPage({ onNavigate }: TPESearchPageProps) {
         <CardContent className="space-y-4">
           {/* Barre de recherche */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Filtrer par nom ou modèle..."
               value={searchFilter}
@@ -221,8 +220,8 @@ export function TPESearchPage({ onNavigate }: TPESearchPageProps) {
 
           {/* Types de connexion supportés */}
           <div className="flex items-center justify-center space-x-6 pt-2 border-t">
-            <div className="flex items-center space-x-2 text-sm text-gray-600">
-              <Bluetooth className="h-4 w-4 text-blue-600" />
+            <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+              <Bluetooth className="h-4 w-4 text-primary" />
               <span>Bluetooth</span>
             </div>
             <div className="flex items-center space-x-2 text-sm text-gray-600">
@@ -359,6 +358,7 @@ export function TPESearchPage({ onNavigate }: TPESearchPageProps) {
           </div>
         </CardContent>
       </Card>
+      </div>
     </div>
   )
 }
