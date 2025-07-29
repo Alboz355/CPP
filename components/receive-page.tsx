@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ArrowLeft, Copy, Share } from "lucide-react"
+import { toast } from "sonner"
 import type { AppState } from "@/app/page"
 
 interface ReceivePageProps {
@@ -27,7 +28,7 @@ export function ReceivePage({ walletData, onNavigate }: ReceivePageProps) {
 
   const copyAddress = () => {
     navigator.clipboard.writeText(walletData.address)
-    alert("Adresse copiée !")
+    toast.success("Adresse copiée !")
   }
 
   const shareAddress = () => {

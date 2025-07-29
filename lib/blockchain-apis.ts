@@ -28,7 +28,7 @@ export interface NetworkFees {
 
 // Service Ethereum optimisé avec timeout réduit
 export class EthereumService {
-  private infuraKey = "eae8428d4ae4477e946ac8f8301f2bce"
+  private infuraKey = process.env.NEXT_PUBLIC_INFURA_KEY || "eae8428d4ae4477e946ac8f8301f2bce"
   private infuraUrl = `https://mainnet.infura.io/v3/${this.infuraKey}`
 
   async getBalance(address: string): Promise<BlockchainBalance> {
@@ -280,7 +280,7 @@ export class BitcoinService {
 
 // Service ERC-20 optimisé
 export class ERC20Service {
-  private infuraKey = "eae8428d4ae4477e946ac8f8301f2bce"
+  private infuraKey = process.env.NEXT_PUBLIC_INFURA_KEY || "eae8428d4ae4477e946ac8f8301f2bce"
   private infuraUrl = `https://mainnet.infura.io/v3/${this.infuraKey}`
   private usdtContract = "0xdAC17F958D2ee523a2206206994597C13D831ec7"
 

@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ArrowLeft, Send, QrCode, AlertTriangle } from "lucide-react"
+import { toast } from "sonner"
 import type { AppState } from "@/app/page"
 import { BlockchainManager, type NetworkFees } from "@/lib/blockchain-apis"
 
@@ -65,7 +66,7 @@ export function SendPage({ onNavigate }: SendPageProps) {
 
   const handleSend = () => {
     // Simuler l'envoi
-    alert("Transaction envoyée avec succès !")
+    toast.success("Transaction envoyée avec succès !")
     onNavigate("dashboard")
   }
 

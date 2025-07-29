@@ -270,7 +270,7 @@
   }
   
   .mobile-content {
-    @apply ml-280;
+    margin-left: 280px;
   }
 }
 

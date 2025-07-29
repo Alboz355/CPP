@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Wallet, Shield, Key, Copy, Eye, EyeOff } from "lucide-react"
+import { toast } from "sonner"
 
 // Importer les nouveaux utilitaires
 import { MultiCryptoWallet } from "@/lib/wallet-utils"
@@ -53,7 +54,7 @@ export function OnboardingPage({ onWalletCreated }: OnboardingPageProps) {
       onWalletCreated(wallet)
     } catch (error) {
       console.error("Erreur lors de la création du portefeuille:", error)
-      alert("Erreur lors de la création du portefeuille: " + error)
+      toast.error("Erreur lors de la création du portefeuille")
     }
   }
 
@@ -86,13 +87,13 @@ export function OnboardingPage({ onWalletCreated }: OnboardingPageProps) {
       onWalletCreated(wallet)
     } catch (error) {
       console.error("Erreur lors de l'importation:", error)
-      alert("Phrase de récupération invalide: " + error)
+      toast.error("Phrase de récupération invalide")
     }
   }
 
   const copySeedPhrase = () => {
     navigator.clipboard.writeText(generatedSeed)
-    alert("Phrase de récupération copiée !")
+    toast.success("Phrase de récupération copiée !")
   }
 
   return (

@@ -15,12 +15,12 @@ import {
   ShoppingCart,
   CreditCard,
 } from "lucide-react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import type { AppState } from "@/app/page"
 import { BlockchainManager, type BlockchainBalance } from "@/lib/blockchain-apis"
 import { RealTimePrices } from "@/components/real-time-prices"
+import { toast } from "sonner"
 import { LoadingFallback } from "@/components/loading-fallback"
-import { CryptoList } from "@/components/crypto-list"
 import { MtPelerinWidget } from "@/components/mt-pelerin-widget"
 import { ThemeToggle } from "@/components/theme-toggle"
 
@@ -67,6 +67,7 @@ export function MainDashboard({ walletData, onNavigate }: MainDashboardProps) {
       setLastUpdate(new Date())
     } catch (error) {
       console.error("Erreur lors du chargement des données blockchain:", error)
+      toast.error("Impossible de rafraîchir les soldes. Vérifiez votre connexion.")
 
       if (blockchainBalances.length === 0) {
         const defaultBalances: BlockchainBalance[] = [
@@ -87,10 +88,12 @@ export function MainDashboard({ walletData, onNavigate }: MainDashboardProps) {
     return () => clearInterval(interval)
   }, [walletData])
 
-  // Calculer le solde total
-  const totalBalance = blockchainBalances.reduce((sum, balance) => {
-    return sum + Number.parseFloat(balance.balanceUSD || "0")
-  }, 0)
+  // Calculer le solde total avec optimisation
+  const totalBalance = useMemo(() => {
+    return blockchainBalances.reduce((sum, balance) => {
+      return sum + Number.parseFloat(balance.balanceUSD || "0")
+    }, 0)
+  }, [blockchainBalances])
 
   const recentTransactions = [
     { type: "received", crypto: "ETH", amount: "+0.5", value: "$987.50", time: "2h ago" },
@@ -100,7 +103,7 @@ export function MainDashboard({ walletData, onNavigate }: MainDashboardProps) {
 
   const copyAddress = (address: string, symbol: string) => {
     navigator.clipboard.writeText(address)
-    alert(`Adresse ${symbol} copiée !`)
+    toast.success(`Adresse ${symbol} copiée !`)
   }
 
   // Ouvrir Mt Pelerin avec une action spécifique
