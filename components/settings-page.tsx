@@ -7,10 +7,12 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ArrowLeft, Shield, Bell, Globe, Smartphone, Key, Trash2, AlertTriangle, HelpCircle } from "lucide-react"
+import { toast } from "sonner"
 import type { AppState } from "@/app/page"
 import { SeedPhraseModal } from "./seed-phrase-modal"
 import { ThemeToggle } from "./theme-toggle"
 import { useTheme } from "next-themes"
+import { useWalletStore } from "@/lib/wallet-store"
 
 interface SettingsPageProps {
   onNavigate: (page: AppState) => void
@@ -18,6 +20,7 @@ interface SettingsPageProps {
 
 export function SettingsPage({ onNavigate }: SettingsPageProps) {
   const { theme, setTheme } = useTheme()
+  const { clearWallet } = useWalletStore()
   const [notifications, setNotifications] = useState(true)
   const [biometric, setBiometric] = useState(false)
   const [autoLock, setAutoLock] = useState("5")
@@ -25,7 +28,7 @@ export function SettingsPage({ onNavigate }: SettingsPageProps) {
   const [language, setLanguage] = useState("fr")
   const [showSeedModal, setShowSeedModal] = useState(false)
 
-  // Vérifier si la seed phrase a déjà été montrée
+  // Vérifier si la seed phrase a déjà été montrée (use localStorage for UI state)
   const seedPhraseShown = localStorage.getItem("seedPhraseShown") === "true"
 
   const handleShowSeedPhrase = () => {
@@ -41,21 +44,18 @@ export function SettingsPage({ onNavigate }: SettingsPageProps) {
   }
 
   const handleChangePin = () => {
-    alert("Redirection vers le changement de PIN")
+    toast.info("Redirection vers le changement de PIN")
   }
 
   const handleDeleteWallet = () => {
     if (confirm("Êtes-vous sûr de vouloir supprimer ce portefeuille ? Cette action est irréversible.")) {
-      localStorage.clear()
-      alert("Portefeuille supprimé")
+      clearWallet()
       onNavigate("onboarding")
     }
   }
 
   const handleContactSupport = () => {
-    alert(
-      "Contactez le support à : support@cryptowallet.com\n\nNote: Le support ne peut pas récupérer les phrases de récupération perdues.",
-    )
+    toast.info("Support: support@cryptowallet.com\n\nNote: Le support ne peut pas récupérer les phrases de récupération perdues.")
   }
 
   return (

@@ -15,14 +15,15 @@ import {
   ShoppingCart,
   CreditCard,
 } from "lucide-react"
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect } from "react"
 import type { AppState } from "@/app/page"
-import { BlockchainManager, type BlockchainBalance } from "@/lib/blockchain-apis"
 import { RealTimePrices } from "@/components/real-time-prices"
-import { toast } from "sonner"
 import { LoadingFallback } from "@/components/loading-fallback"
+import { CryptoList } from "@/components/crypto-list"
 import { MtPelerinWidget } from "@/components/mt-pelerin-widget"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { toast } from "sonner"
+import { useWalletStore, useTotalBalance } from "@/lib/wallet-store"
 
 interface MainDashboardProps {
   walletData: any
@@ -30,70 +31,29 @@ interface MainDashboardProps {
 }
 
 export function MainDashboard({ walletData, onNavigate }: MainDashboardProps) {
-  const [showBalance, setShowBalance] = useState(true)
   const [showMtPelerin, setShowMtPelerin] = useState(false)
   const [mtPelerinAction, setMtPelerinAction] = useState<"buy" | "sell" | "swap">("buy")
 
-  // États pour les données blockchain
-  const [blockchainBalances, setBlockchainBalances] = useState<BlockchainBalance[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [lastUpdate, setLastUpdate] = useState<Date | null>(null)
+  // Use Zustand store for state management
+  const {
+    blockchainBalances,
+    isLoadingBalances,
+    lastBalanceUpdate,
+    showBalance,
+    setShowBalance,
+    loadBlockchainData,
+    refreshBalances,
+  } = useWalletStore()
 
-  const blockchainManager = new BlockchainManager()
+  // Use computed total balance from store
+  const totalBalance = useTotalBalance()
 
-  // Charger les données blockchain
-  const loadBlockchainData = async () => {
-    if (!walletData?.addresses) {
-      console.log("Pas d'adresses de portefeuille disponibles")
-      return
-    }
-
-    console.log("Chargement des données blockchain...")
-    console.log("Adresses:", walletData.addresses)
-    setIsLoading(true)
-
-    try {
-      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 10000))
-
-      const balancesPromise = blockchainManager.getAllBalances({
-        eth: walletData.addresses.ethereum,
-        btc: walletData.addresses.bitcoin,
-      })
-
-      const balances = (await Promise.race([balancesPromise, timeoutPromise])) as BlockchainBalance[]
-
-      console.log("Soldes chargés:", balances)
-      setBlockchainBalances(balances)
-      setLastUpdate(new Date())
-    } catch (error) {
-      console.error("Erreur lors du chargement des données blockchain:", error)
-      toast.error("Impossible de rafraîchir les soldes. Vérifiez votre connexion.")
-
-      if (blockchainBalances.length === 0) {
-        const defaultBalances: BlockchainBalance[] = [
-          { symbol: "ETH", balance: "0.000000", balanceUSD: "0.00", address: walletData.addresses.ethereum },
-          { symbol: "BTC", balance: "0.00000000", balanceUSD: "0.00", address: walletData.addresses.bitcoin },
-          { symbol: "USDT", balance: "0.00", balanceUSD: "0.00", address: walletData.addresses.ethereum },
-        ]
-        setBlockchainBalances(defaultBalances)
-      }
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
+  // Load blockchain data on component mount
   useEffect(() => {
     loadBlockchainData()
-    const interval = setInterval(loadBlockchainData, 30000)
+    const interval = setInterval(refreshBalances, 30000)
     return () => clearInterval(interval)
-  }, [walletData])
-
-  // Calculer le solde total avec optimisation
-  const totalBalance = useMemo(() => {
-    return blockchainBalances.reduce((sum, balance) => {
-      return sum + Number.parseFloat(balance.balanceUSD || "0")
-    }, 0)
-  }, [blockchainBalances])
+  }, [loadBlockchainData, refreshBalances])
 
   const recentTransactions = [
     { type: "received", crypto: "ETH", amount: "+0.5", value: "$987.50", time: "2h ago" },
@@ -153,7 +113,7 @@ export function MainDashboard({ walletData, onNavigate }: MainDashboardProps) {
               </Button>
             </div>
 
-            {isLoading ? (
+            {isLoadingBalances ? (
               <div className="space-y-3">
                 <div className="h-8 bg-muted/50 rounded-lg animate-pulse"></div>
                 <div className="h-4 bg-muted/30 rounded-lg animate-pulse w-1/2"></div>
@@ -163,9 +123,9 @@ export function MainDashboard({ walletData, onNavigate }: MainDashboardProps) {
                 <div className="text-4xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
                   {showBalance ? `$${totalBalance.toLocaleString()}` : "••••••"}
                 </div>
-                {lastUpdate && (
+                {lastBalanceUpdate && (
                   <div className="caption-text">
-                    Dernière mise à jour: {lastUpdate.toLocaleTimeString()}
+                    Dernière mise à jour: {lastBalanceUpdate.toLocaleTimeString()}
                   </div>
                 )}
                 <div className="flex items-center space-x-2 text-green-500">

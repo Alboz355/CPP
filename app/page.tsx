@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect } from "react"
 import { OnboardingPage } from "@/components/onboarding-page"
 import { PinSetupPage } from "@/components/pin-setup-page"
 import { MainDashboard } from "@/components/main-dashboard"
@@ -9,9 +9,8 @@ import { ReceivePage } from "@/components/receive-page"
 import { TransactionHistory } from "@/components/transaction-history"
 import { SettingsPage } from "@/components/settings-page"
 import { TPEDashboard } from "@/components/tpe-dashboard"
-import { WalletSecureStorage } from "@/lib/secure-storage"
-
 import { ErrorBoundary } from "@/components/error-boundary"
+import { useWalletStore } from "@/lib/wallet-store"
 
 export type AppState =
   | "onboarding"
@@ -30,31 +29,27 @@ export type AppState =
   | "tpe-vat"
 
 export default function CryptoWalletApp() {
-  const [currentPage, setCurrentPage] = useState<AppState>("onboarding")
-  const [walletData, setWalletData] = useState<any>(null)
-  const [pin, setPin] = useState<string>("")
+  const {
+    currentPage,
+    walletData,
+    setWalletData,
+    setPin,
+    setCurrentPage,
+    initializeFromStorage,
+  } = useWalletStore()
 
-  // Simuler la vérification de l'état de l'app au démarrage avec stockage sécurisé
+  // Initialize from storage on app start
   useEffect(() => {
-    const savedWallet = WalletSecureStorage.getWallet()
-    const savedPin = WalletSecureStorage.getPin()
-
-    if (savedWallet && savedPin) {
-      setCurrentPage("dashboard")
-      setWalletData(savedWallet)
-      setPin(savedPin)
-    }
-  }, [])
+    initializeFromStorage()
+  }, [initializeFromStorage])
 
   const handleWalletCreated = (wallet: any) => {
     setWalletData(wallet)
-    WalletSecureStorage.setWallet(wallet)
     setCurrentPage("pin-setup")
   }
 
   const handlePinCreated = (newPin: string) => {
     setPin(newPin)
-    WalletSecureStorage.setPin(newPin)
     setCurrentPage("dashboard")
   }
 

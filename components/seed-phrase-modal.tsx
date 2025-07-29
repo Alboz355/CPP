@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { AlertTriangle, Eye, EyeOff, Copy, X, Shield } from "lucide-react"
+import { toast } from "sonner"
+import { WalletSecureStorage } from "@/lib/secure-storage"
 
 interface SeedPhraseModalProps {
   isOpen: boolean
@@ -19,8 +21,8 @@ export function SeedPhraseModal({ isOpen, onClose, onConfirm }: SeedPhraseModalP
 
   if (!isOpen) return null
 
-  const walletData = JSON.parse(localStorage.getItem("wallet") || "{}")
-  const seedPhrase = walletData.seedPhrase || "Phrase non disponible"
+  const walletData = WalletSecureStorage.getWallet()
+  const seedPhrase = walletData?.seedPhrase || WalletSecureStorage.getMnemonic() || "Phrase non disponible"
 
   const handleContinue = () => {
     if (step === 1) {
@@ -39,7 +41,7 @@ export function SeedPhraseModal({ isOpen, onClose, onConfirm }: SeedPhraseModalP
 
   const copySeedPhrase = () => {
     navigator.clipboard.writeText(seedPhrase)
-    alert("Phrase de récupération copiée dans le presse-papiers !")
+    toast.success("Phrase de récupération copiée dans le presse-papiers !")
   }
 
   return (
