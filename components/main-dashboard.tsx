@@ -15,7 +15,7 @@ import {
   ShoppingCart,
   CreditCard,
 } from "lucide-react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import type { AppState } from "@/app/page"
 import { BlockchainManager, type BlockchainBalance } from "@/lib/blockchain-apis"
 import { RealTimePrices } from "@/components/real-time-prices"
@@ -23,6 +23,7 @@ import { LoadingFallback } from "@/components/loading-fallback"
 import { CryptoList } from "@/components/crypto-list"
 import { MtPelerinWidget } from "@/components/mt-pelerin-widget"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { notify } from "@/lib/notifications"
 
 interface MainDashboardProps {
   walletData: any
@@ -65,8 +66,19 @@ export function MainDashboard({ walletData, onNavigate }: MainDashboardProps) {
       console.log("Soldes chargés:", balances)
       setBlockchainBalances(balances)
       setLastUpdate(new Date())
+      
+      // Check for errors in balance data and notify user
+      const errors = balances.filter(balance => balance.error)
+      if (errors.length > 0) {
+        const errorServices = errors.map(e => e.error!.service).join(", ")
+        notify.warning(
+          "Certains services sont temporairement indisponibles",
+          `Impossible de récupérer les données pour: ${errorServices}`
+        )
+      }
     } catch (error) {
       console.error("Erreur lors du chargement des données blockchain:", error)
+      notify.error("Impossible de charger les données", "Vérifiez votre connexion internet")
 
       if (blockchainBalances.length === 0) {
         const defaultBalances: BlockchainBalance[] = [
@@ -87,10 +99,12 @@ export function MainDashboard({ walletData, onNavigate }: MainDashboardProps) {
     return () => clearInterval(interval)
   }, [walletData])
 
-  // Calculer le solde total
-  const totalBalance = blockchainBalances.reduce((sum, balance) => {
-    return sum + Number.parseFloat(balance.balanceUSD || "0")
-  }, 0)
+  // Calculate total balance with memoization for performance
+  const totalBalance = useMemo(() => {
+    return blockchainBalances.reduce((sum, balance) => {
+      return sum + Number.parseFloat(balance.balanceUSD || "0")
+    }, 0)
+  }, [blockchainBalances])
 
   const recentTransactions = [
     { type: "received", crypto: "ETH", amount: "+0.5", value: "$987.50", time: "2h ago" },

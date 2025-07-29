@@ -11,7 +11,9 @@
     "dist": "electron-builder",
     "dev": "next dev",
     "lint": "next lint",
-    "start": "next start"
+    "start": "next start",
+    "test": "jest",
+    "test:watch": "jest --watch"
   },
   "dependencies": {
     "@capacitor/cli": "^7.4.2",
@@ -48,11 +50,13 @@
     "@radix-ui/react-toggle-group": "1.1.1",
     "@radix-ui/react-tooltip": "1.1.6",
     "@scure/bip32": "latest",
+    "@types/crypto-js": "^4.2.2",
     "autoprefixer": "^10.4.20",
     "bip39": "latest",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "1.0.4",
+    "crypto-js": "^4.2.0",
     "date-fns": "4.1.0",
     "embla-carousel-react": "8.5.1",
     "geist": "^1.3.1",
@@ -73,11 +77,17 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.6.4",
+    "@testing-library/react": "^16.3.0",
     "@types/node": "^22",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "electron": "^31.0.1",
     "electron-builder": "^24.13.3",
+    "eslint": "^8.57.1",
+    "eslint-config-next": "^15.4.4",
+    "jest": "^30.0.5",
+    "jest-environment-jsdom": "^30.0.5",
     "postcss": "^8.5",
     "tailwindcss": "^3.4.17",
     "typescript": "^5"

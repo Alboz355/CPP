@@ -11,6 +11,8 @@ import type { AppState } from "@/app/page"
 import { SeedPhraseModal } from "./seed-phrase-modal"
 import { ThemeToggle } from "./theme-toggle"
 import { useTheme } from "next-themes"
+import { notify } from "@/lib/notifications"
+import { SecureStorage } from "@/lib/secure-storage"
 
 interface SettingsPageProps {
   onNavigate: (page: AppState) => void
@@ -41,20 +43,26 @@ export function SettingsPage({ onNavigate }: SettingsPageProps) {
   }
 
   const handleChangePin = () => {
-    alert("Redirection vers le changement de PIN")
+    notify.info("Redirection vers le changement de PIN", "Cette fonctionnalité sera disponible prochainement")
   }
 
-  const handleDeleteWallet = () => {
+  const handleDeleteWallet = async () => {
     if (confirm("Êtes-vous sûr de vouloir supprimer ce portefeuille ? Cette action est irréversible.")) {
-      localStorage.clear()
-      alert("Portefeuille supprimé")
-      onNavigate("onboarding")
+      try {
+        localStorage.clear()
+        await SecureStorage.clear()
+        notify.success("Portefeuille supprimé", "Toutes les données ont été effacées")
+        onNavigate("onboarding")
+      } catch (error) {
+        notify.error("Erreur lors de la suppression", "Certaines données n'ont pas pu être effacées")
+      }
     }
   }
 
   const handleContactSupport = () => {
-    alert(
-      "Contactez le support à : support@cryptowallet.com\n\nNote: Le support ne peut pas récupérer les phrases de récupération perdues.",
+    notify.info(
+      "Support technique",
+      "Contactez-nous à : support@cryptowallet.com\n\nNote: Le support ne peut pas récupérer les phrases de récupération perdues."
     )
   }
 
