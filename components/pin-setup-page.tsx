@@ -57,7 +57,7 @@ export function PinSetupPage({ onPinCreated }: PinSetupPageProps) {
           <h1 className="heading-1 mb-2">Créer un PIN</h1>
           <p className="body-text">Sécurisez votre portefeuille avec un code PIN</p>
         </div>
-        <form onSubmit={(e) => { e.preventDefault(); handleCreatePin(); }} className="space-y-6">
+        <form onSubmit={(e) => { e.preventDefault(); handleSubmit(); }} className="space-y-6">
           <div className="space-y-3">
             <label className="text-sm font-medium text-foreground">Longueur du PIN</label>
             <RadioGroup value={pinLength} onValueChange={setPinLength}>
