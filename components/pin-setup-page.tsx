@@ -57,7 +57,7 @@ export function PinSetupPage({ onPinCreated }: PinSetupPageProps) {
           <h1 className="heading-1 mb-2">Créer un PIN</h1>
           <p className="body-text">Sécurisez votre portefeuille avec un code PIN</p>
         </div>
-        <div className="space-y-6">
+        <form onSubmit={(e) => { e.preventDefault(); handleCreatePin(); }} className="space-y-6">
           <div className="space-y-3">
             <label className="text-sm font-medium text-foreground">Longueur du PIN</label>
             <RadioGroup value={pinLength} onValueChange={setPinLength}>
@@ -87,6 +87,7 @@ export function PinSetupPage({ onPinCreated }: PinSetupPageProps) {
                   onChange={(e) => handlePinChange(e.target.value)}
                   placeholder={`Entrez ${pinLength} chiffres`}
                   maxLength={Number.parseInt(pinLength)}
+                  autoComplete="new-password"
                   className="rounded-xl border-border/50 bg-accent/30 pr-12"
                 />
                 <Button
@@ -112,6 +113,7 @@ export function PinSetupPage({ onPinCreated }: PinSetupPageProps) {
                 onChange={(e) => handleConfirmPinChange(e.target.value)}
                 placeholder={`Confirmez ${pinLength} chiffres`}
                 maxLength={Number.parseInt(pinLength)}
+                autoComplete="new-password"
                 className="rounded-xl border-border/50 bg-accent/30"
               />
             </div>
@@ -134,14 +136,14 @@ export function PinSetupPage({ onPinCreated }: PinSetupPageProps) {
             </div>
           </div>
 
-          <button 
-            onClick={handleSubmit} 
+          <button
+            type="submit" 
             className="ios-button-primary w-full disabled:opacity-50" 
             disabled={!isValid}
           >
             Créer le PIN
           </button>
-        </div>
+        </form>
       </div>
     </div>
   )

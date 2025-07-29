@@ -113,6 +113,7 @@ export function TPEPinVerification({ onNavigate, onVerificationSuccess }: TPEPin
                 className="text-center text-2xl tracking-widest"
                 autoFocus
                 maxLength={6}
+                autoComplete="current-password"
                 disabled={isLoading || attempts >= maxAttempts}
               />
               <p className="text-xs text-muted-foreground text-center">
