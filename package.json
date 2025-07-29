@@ -11,7 +11,9 @@
     "dist": "electron-builder",
     "dev": "next dev",
     "lint": "next lint",
-    "start": "next start"
+    "start": "next start",
+    "test": "jest",
+    "test:watch": "jest --watch"
   },
   "dependencies": {
     "@capacitor/cli": "^7.4.2",
@@ -75,6 +77,8 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.6.4",
+    "@testing-library/react": "^16.3.0",
     "@types/node": "^22",
     "@types/react": "^18",
     "@types/react-dom": "^18",
@@ -82,6 +86,8 @@
     "electron-builder": "^24.13.3",
     "eslint": "^8.57.1",
     "eslint-config-next": "^15.4.4",
+    "jest": "^30.0.5",
+    "jest-environment-jsdom": "^30.0.5",
     "postcss": "^8.5",
     "tailwindcss": "^3.4.17",
     "typescript": "^5"

@@ -161,7 +161,7 @@ export class BasicSecureStorage {
 
   static getItem(key: string): string | null {
     const encodedValue = localStorage.getItem(`basic_secure_${key}`)
-    if (encodedValue) {
+    if (encodedValue !== null) {
       try {
         return this.decode(encodedValue)
       } catch {
