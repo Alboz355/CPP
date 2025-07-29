@@ -82,8 +82,19 @@ export class SecureStorage {
         request.onerror = () => reject(request.error)
       })
       
-      if (result) {
-        return decryptData(result.value)
+      if (result && result.value) {
+        try {
+          const decryptedData = decryptData(result.value)
+          // Verify that the decrypted data is valid UTF-8
+          if (decryptedData && decryptedData.length > 0) {
+            return decryptedData
+          }
+        } catch (decryptError) {
+          console.warn(`SecureStorage: Failed to decrypt data for key ${key}, removing corrupted entry`, decryptError)
+          // Remove corrupted data
+          await this.removeItem(key)
+          return null
+        }
       }
       return null
     } catch (error) {
@@ -92,8 +103,15 @@ export class SecureStorage {
       const encryptedValue = localStorage.getItem(`secure_${key}`)
       if (encryptedValue) {
         try {
-          return decryptData(encryptedValue)
-        } catch {
+          const decryptedData = decryptData(encryptedValue)
+          // Verify that the decrypted data is valid UTF-8
+          if (decryptedData && decryptedData.length > 0) {
+            return decryptedData
+          }
+        } catch (decryptError) {
+          console.warn(`SecureStorage: Failed to decrypt localStorage data for key ${key}, removing corrupted entry`, decryptError)
+          // Remove corrupted data
+          localStorage.removeItem(`secure_${key}`)
           return null
         }
       }

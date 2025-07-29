@@ -48,11 +48,11 @@ export class EthereumService {
     try {
       console.log(`⚡ Récupération rapide du solde ETH pour: ${address}`)
 
-      // Timeout réduit à 3 secondes
+      // Use API route instead of direct call
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 3000)
 
-      const balanceResponse = await fetch(this.infuraUrl, {
+      const balanceResponse = await fetch('/api/eth-balance', {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -118,13 +118,10 @@ export class EthereumService {
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 2000) // 2s seulement
 
-      const response = await fetch(
-        `https://api.etherscan.io/api?module=account&action=txlist&address=${address}&startblock=0&endblock=99999999&sort=desc&page=1&offset=5`,
-        {
-          headers: { Accept: "application/json" },
-          signal: controller.signal,
-        },
-      )
+      const response = await fetch(`/api/eth-transactions?address=${address}`, {
+        headers: { Accept: "application/json" },
+        signal: controller.signal,
+      })
 
       clearTimeout(timeoutId)
 
@@ -182,7 +179,7 @@ export class BitcoinService {
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 3000)
 
-      const response = await fetch(`https://api.blockcypher.com/v1/btc/main/addrs/${address}/balance`, {
+      const response = await fetch(`/api/btc-balance?address=${address}`, {
         headers: { Accept: "application/json" },
         signal: controller.signal,
       })
@@ -229,7 +226,7 @@ export class BitcoinService {
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 2000)
 
-      const response = await fetch(`https://api.blockcypher.com/v1/btc/main/addrs/${address}/full?limit=5`, {
+      const response = await fetch(`/api/btc-transactions?address=${address}`, {
         headers: { Accept: "application/json" },
         signal: controller.signal,
       })
@@ -318,7 +315,7 @@ export class ERC20Service {
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 3000)
 
-      const response = await fetch(this.infuraUrl, {
+      const response = await fetch('/api/eth-balance', {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
