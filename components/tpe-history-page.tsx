@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useIsMobile } from "@/hooks/use-mobile"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -28,6 +29,7 @@ interface TPEHistoryPageProps {
 }
 
 export function TPEHistoryPage({ onNavigate }: TPEHistoryPageProps) {
+  const isMobile = useIsMobile()
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>([])
   const [searchTerm, setSearchTerm] = useState("")
@@ -175,13 +177,14 @@ export function TPEHistoryPage({ onNavigate }: TPEHistoryPageProps) {
   }
 
   return (
-    <div className="min-h-screen p-4 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <Button variant="ghost" size="icon" onClick={() => onNavigate("tpe")}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
+    <div className={isMobile ? "min-h-screen p-4 space-y-6" : "w-full space-y-6"}>
+      {/* Header - only show on mobile */}
+      {isMobile && (
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <Button variant="ghost" size="icon" onClick={() => onNavigate("tpe")}>
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
           <div>
             <h1 className="text-2xl font-bold">Historique TPE</h1>
             <p className="text-gray-600">Transactions et statistiques</p>
@@ -191,7 +194,8 @@ export function TPEHistoryPage({ onNavigate }: TPEHistoryPageProps) {
           <Download className="h-4 w-4 mr-2" />
           Exporter
         </Button>
-      </div>
+        </div>
+      )}
 
       {/* Onglets */}
       <Tabs defaultValue="transactions" className="w-full">

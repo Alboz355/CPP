@@ -299,7 +299,7 @@
 /* Optimisations pour les très grands écrans */
 @media (min-width: 1024px) {
   .mobile-container {
-    @apply max-w-none h-screen flex;
+    @apply max-w-none h-screen flex w-full;
   }
   
   /* Desktop layout styles */
@@ -320,7 +320,8 @@
   }
   
   .desktop-content {
-    @apply flex-1 overflow-auto p-6;
+    @apply flex-1 overflow-auto p-6 w-full;
+    /* Remove any max-width constraints to use full available space */
   }
   
   /* Desktop card layouts */

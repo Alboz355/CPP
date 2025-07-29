@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useIsMobile } from "@/hooks/use-mobile"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -23,6 +24,7 @@ interface TPESearchPageProps {
 }
 
 export function TPESearchPage({ onNavigate }: TPESearchPageProps) {
+  const isMobile = useIsMobile()
   const [isScanning, setIsScanning] = useState(false)
   const [devices, setDevices] = useState<TPEDevice[]>([])
   const [connectedDevice, setConnectedDevice] = useState<string | null>(null)
@@ -174,7 +176,7 @@ export function TPESearchPage({ onNavigate }: TPESearchPageProps) {
   )
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className={isMobile ? "min-h-screen bg-background" : "w-full"}>
       <StandardizedHeader
         title="Rechercher TPE"
         subtitle="Scanner les terminaux disponibles"

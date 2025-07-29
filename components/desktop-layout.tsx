@@ -144,6 +144,16 @@ export function DesktopLayout({ children, currentPage, onNavigate, walletData }:
               </div>
               <div className="flex items-center gap-2">
                 <ThemeToggle />
+                {currentPage.startsWith("tpe") && (
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    onClick={() => onNavigate("tpe-settings")}
+                    className="h-10 w-10 rounded-xl hover:bg-accent/50"
+                  >
+                    <Settings className="h-5 w-5" />
+                  </Button>
+                )}
               </div>
             </div>
           </header>
@@ -172,6 +182,20 @@ function getPageTitle(page: string): string {
     case "tpe":
     case "tpe-pin-verification":
       return "Terminal de Paiement Électronique"
+    case "tpe-search":
+      return "Recherche de produits"
+    case "tpe-billing":
+      return "Facturation TPE"
+    case "tpe-payment":
+      return "Paiement TPE"
+    case "tpe-conversion":
+      return "Conversion de devises"
+    case "tpe-history":
+      return "Historique TPE"
+    case "tpe-settings":
+      return "Paramètres TPE"
+    case "tpe-vat":
+      return "Gestion TVA"
     default:
       return "CryptoPayPro"
   }
@@ -192,6 +216,20 @@ function getPageDescription(page: string): string {
     case "tpe":
     case "tpe-pin-verification":
       return "Mode terminal de paiement"
+    case "tpe-search":
+      return "Rechercher et sélectionner des produits"
+    case "tpe-billing":
+      return "Générer des factures et devis"
+    case "tpe-payment":
+      return "Traitement des paiements"
+    case "tpe-conversion":
+      return "Convertir les devises"
+    case "tpe-history":
+      return "Historique des transactions TPE"
+    case "tpe-settings":
+      return "Configuration du terminal de paiement"
+    case "tpe-vat":
+      return "Gestion de la TVA et fiscalité"
     default:
       return "Application de portefeuille multi-crypto"
   }

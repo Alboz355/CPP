@@ -18,6 +18,7 @@ import {
 } from "lucide-react"
 import type { AppState } from "@/app/page"
 import { useState, useEffect } from "react"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 interface TPEMainPageProps {
   onNavigate: (page: AppState) => void
@@ -25,6 +26,7 @@ interface TPEMainPageProps {
 }
 
 export function TPEMainPage({ onNavigate, walletData }: TPEMainPageProps) {
+  const isMobile = useIsMobile()
   const [tpeConnected, setTpeConnected] = useState(false)
   const [connectedDevice, setConnectedDevice] = useState<string | null>(null)
   const [todayStats, setTodayStats] = useState({
@@ -84,7 +86,7 @@ export function TPEMainPage({ onNavigate, walletData }: TPEMainPageProps) {
   ]
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className={isMobile ? "min-h-screen bg-background" : "w-full"}>
       <StandardizedHeader
         title="Mode TPE"
         subtitle="Terminal de Paiement Électronique"
@@ -93,7 +95,7 @@ export function TPEMainPage({ onNavigate, walletData }: TPEMainPageProps) {
         onSettings={() => onNavigate("tpe-settings")}
       />
       
-      <div className="p-4 space-y-6">
+      <div className={isMobile ? "p-4 space-y-6" : "w-full space-y-6"}>
         {/* Statut de connexion */}
         <Card>
         <CardHeader>

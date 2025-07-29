@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useIsMobile } from "@/hooks/use-mobile"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -57,6 +58,7 @@ interface TPESettingsPageProps {
 }
 
 export function TPESettingsPage({ onNavigate }: TPESettingsPageProps) {
+  const isMobile = useIsMobile()
   const [settings, setSettings] = useState<TPESettings>({
     businessName: "",
     businessAddress: "",
@@ -147,7 +149,7 @@ export function TPESettingsPage({ onNavigate }: TPESettingsPageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className={isMobile ? "min-h-screen bg-background" : "w-full"}>
       <StandardizedHeader
         title="Paramètres TPE"
         subtitle="Configuration du terminal de paiement"

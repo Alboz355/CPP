@@ -13,6 +13,7 @@ import { ThemeToggle } from "./theme-toggle"
 import { useTheme } from "next-themes"
 import { notify } from "@/lib/notifications"
 import { SecureStorage } from "@/lib/secure-storage"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 interface SettingsPageProps {
   onNavigate: (page: AppState) => void
@@ -20,6 +21,7 @@ interface SettingsPageProps {
 
 export function SettingsPage({ onNavigate }: SettingsPageProps) {
   const { theme, setTheme } = useTheme()
+  const isMobile = useIsMobile()
   const [notifications, setNotifications] = useState(true)
   const [biometric, setBiometric] = useState(false)
   const [autoLock, setAutoLock] = useState("5")
@@ -68,23 +70,25 @@ export function SettingsPage({ onNavigate }: SettingsPageProps) {
 
   return (
     <>
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/20">
-        {/* Header moderne */}
-        <div className="mobile-header">
-          <div className="flex items-center space-x-4 p-4">
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={() => onNavigate("dashboard")}
-              className="h-10 w-10 rounded-xl hover:bg-accent/50"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <h1 className="heading-2">Paramètres</h1>
+      <div className={isMobile ? "min-h-screen bg-gradient-to-br from-background via-background to-accent/20" : "w-full"}>
+        {/* Header moderne - only show on mobile, desktop layout handles header */}
+        {isMobile && (
+          <div className="mobile-header">
+            <div className="flex items-center space-x-4 p-4">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => onNavigate("dashboard")}
+                className="h-10 w-10 rounded-xl hover:bg-accent/50"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <h1 className="heading-2">Paramètres</h1>
+            </div>
           </div>
-        </div>
+        )}
 
-        <div className="mobile-content p-4 space-y-6">
+        <div className={isMobile ? "mobile-content p-4 space-y-6" : "w-full space-y-6"}>
           {/* Thème et Apparence */}
           <div className="modern-card p-6 fade-in">
             <div className="flex items-center space-x-3 mb-4">

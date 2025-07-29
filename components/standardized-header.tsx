@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { ArrowLeft, Settings } from "lucide-react"
 import type { AppState } from "@/app/page"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 interface StandardizedHeaderProps {
   title: string
@@ -26,12 +27,19 @@ export function StandardizedHeader({
   backPage,
   onNavigate
 }: StandardizedHeaderProps) {
+  const isMobile = useIsMobile()
+  
   const handleBack = () => {
     if (onBack) {
       onBack()
     } else if (backPage && onNavigate) {
       onNavigate(backPage)
     }
+  }
+
+  // Don't render header on desktop as DesktopLayout handles it
+  if (!isMobile) {
+    return null
   }
 
   return (
