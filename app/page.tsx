@@ -10,6 +10,7 @@ import { TransactionHistory } from "@/components/transaction-history"
 import { SettingsPage } from "@/components/settings-page"
 import { TPEDashboard } from "@/components/tpe-dashboard"
 import { ErrorBoundary } from "@/components/error-boundary"
+import { SecureStorage } from "@/lib/secure-storage"
 
 export type AppState =
   | "onboarding"
@@ -33,27 +34,52 @@ export default function CryptoWalletApp() {
   const [walletData, setWalletData] = useState<any>(null)
   const [pin, setPin] = useState<string>("")
 
-  // Simuler la vérification de l'état de l'app au démarrage
+  // Verify app state on startup using secure storage
   useEffect(() => {
-    const savedWallet = localStorage.getItem("wallet")
-    const savedPin = localStorage.getItem("pin")
+    const loadSecureData = async () => {
+      try {
+        const savedWallet = await SecureStorage.getItem("wallet")
+        const savedPin = await SecureStorage.getItem("pin")
 
-    if (savedWallet && savedPin) {
-      setCurrentPage("dashboard")
-      setWalletData(JSON.parse(savedWallet))
-      setPin(savedPin)
+        if (savedWallet && savedPin) {
+          setCurrentPage("dashboard")
+          setWalletData(JSON.parse(savedWallet))
+          setPin(savedPin)
+        }
+      } catch (error) {
+        console.error("Failed to load secure data:", error)
+        // Fallback to check if data exists in old localStorage format
+        const oldWallet = localStorage.getItem("wallet")
+        const oldPin = localStorage.getItem("pin")
+        
+        if (oldWallet && oldPin) {
+          // Migrate old data to secure storage
+          await SecureStorage.setItem("wallet", oldWallet)
+          await SecureStorage.setItem("pin", oldPin)
+          
+          // Remove from localStorage
+          localStorage.removeItem("wallet")
+          localStorage.removeItem("pin")
+          
+          setCurrentPage("dashboard")
+          setWalletData(JSON.parse(oldWallet))
+          setPin(oldPin)
+        }
+      }
     }
+    
+    loadSecureData()
   }, [])
 
-  const handleWalletCreated = (wallet: any) => {
+  const handleWalletCreated = async (wallet: any) => {
     setWalletData(wallet)
-    localStorage.setItem("wallet", JSON.stringify(wallet))
+    await SecureStorage.setItem("wallet", JSON.stringify(wallet))
     setCurrentPage("pin-setup")
   }
 
-  const handlePinCreated = (newPin: string) => {
+  const handlePinCreated = async (newPin: string) => {
     setPin(newPin)
-    localStorage.setItem("pin", newPin)
+    await SecureStorage.setItem("pin", newPin)
     setCurrentPage("dashboard")
   }
 

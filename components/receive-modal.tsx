@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { X, Copy, Share, AlertTriangle } from "lucide-react"
+import { notify } from "@/lib/notifications"
 
 interface CryptoAsset {
   symbol: string
@@ -59,9 +60,8 @@ export function ReceiveModal({ crypto, onClose }: ReceiveModalProps) {
     generateQRCode()
   }, [crypto.address, crypto.symbol, crypto.network, amount, message])
 
-  const copyAddress = () => {
-    navigator.clipboard.writeText(crypto.address)
-    alert("Adresse copiée !")
+  const copyAddress = async () => {
+    await notify.copyToClipboard(crypto.address, "Adresse copiée !")
   }
 
   const shareAddress = () => {

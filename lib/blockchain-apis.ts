@@ -1,10 +1,17 @@
 // Services pour interagir avec les APIs blockchain - VERSION OPTIMISÉE TIMEOUT
 
+export interface BlockchainError {
+  service: string
+  message: string
+  isRecoverable: boolean
+}
+
 export interface BlockchainBalance {
   symbol: string
   balance: string
   balanceUSD: string
   address: string
+  error?: BlockchainError
 }
 
 export interface BlockchainTransaction {
@@ -28,8 +35,14 @@ export interface NetworkFees {
 
 // Service Ethereum optimisé avec timeout réduit
 export class EthereumService {
-  private infuraKey = "eae8428d4ae4477e946ac8f8301f2bce"
+  private infuraKey = process.env.NEXT_PUBLIC_INFURA_KEY
   private infuraUrl = `https://mainnet.infura.io/v3/${this.infuraKey}`
+
+  constructor() {
+    if (!this.infuraKey) {
+      console.warn("⚠️ NEXT_PUBLIC_INFURA_KEY not found in environment variables")
+    }
+  }
 
   async getBalance(address: string): Promise<BlockchainBalance> {
     try {
@@ -82,13 +95,18 @@ export class EthereumService {
         balanceUSD: balanceUSD,
         address: address,
       }
-    } catch (error) {
+    } catch (error: any) {
       console.log(`⚠️ Fallback ETH pour ${address}:`, error.message)
       return {
         symbol: "ETH",
         balance: "0.000000",
         balanceUSD: "0.00",
         address: address,
+        error: {
+          service: "Ethereum",
+          message: "Impossible de récupérer le solde Ethereum",
+          isRecoverable: true
+        }
       }
     }
   }
@@ -190,13 +208,18 @@ export class BitcoinService {
         balanceUSD: balanceUSD,
         address: address,
       }
-    } catch (error) {
+    } catch (error: any) {
       console.log(`⚠️ Fallback BTC pour ${address}:`, error.message)
       return {
         symbol: "BTC",
         balance: "0.00000000",
         balanceUSD: "0.00",
         address: address,
+        error: {
+          service: "Bitcoin",
+          message: "Impossible de récupérer le solde Bitcoin",
+          isRecoverable: true
+        }
       }
     }
   }
@@ -280,9 +303,15 @@ export class BitcoinService {
 
 // Service ERC-20 optimisé
 export class ERC20Service {
-  private infuraKey = "eae8428d4ae4477e946ac8f8301f2bce"
+  private infuraKey = process.env.NEXT_PUBLIC_INFURA_KEY
   private infuraUrl = `https://mainnet.infura.io/v3/${this.infuraKey}`
   private usdtContract = "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+
+  constructor() {
+    if (!this.infuraKey) {
+      console.warn("⚠️ NEXT_PUBLIC_INFURA_KEY not found in environment variables")
+    }
+  }
 
   async getUSDTBalance(address: string): Promise<BlockchainBalance> {
     try {
@@ -332,13 +361,18 @@ export class ERC20Service {
         balanceUSD: balanceUSDT,
         address: address,
       }
-    } catch (error) {
+    } catch (error: any) {
       console.log(`⚠️ Fallback USDT pour ${address}`)
       return {
         symbol: "USDT",
         balance: "0.00",
         balanceUSD: "0.00",
         address: address,
+        error: {
+          service: "USDT",
+          message: "Impossible de récupérer le solde USDT",
+          isRecoverable: true
+        }
       }
     }
   }
@@ -371,18 +405,33 @@ export class BlockchainManager {
           balance: "0.000000",
           balanceUSD: "0.00",
           address: addresses.eth,
+          error: {
+            service: "Ethereum",
+            message: "Service temporairement indisponible",
+            isRecoverable: true
+          }
         })),
         this.bitcoinService.getBalance(addresses.btc).catch(() => ({
           symbol: "BTC",
           balance: "0.00000000",
           balanceUSD: "0.00",
           address: addresses.btc,
+          error: {
+            service: "Bitcoin", 
+            message: "Service temporairement indisponible",
+            isRecoverable: true
+          }
         })),
         this.erc20Service.getUSDTBalance(addresses.eth).catch(() => ({
           symbol: "USDT",
           balance: "0.00",
           balanceUSD: "0.00",
           address: addresses.eth,
+          error: {
+            service: "USDT",
+            message: "Service temporairement indisponible", 
+            isRecoverable: true
+          }
         })),
       ]
 

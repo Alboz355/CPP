@@ -2,6 +2,7 @@ import type React from "react";
 import type { Metadata } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "sonner";
 
 // Les lignes "next/font" qui causaient l'erreur ont été supprimées.
 
@@ -44,6 +45,11 @@ export default function RootLayout({
           <div className="mobile-container">
             {children}
           </div>
+          <Toaster 
+            position="top-center"
+            richColors
+            closeButton
+          />
         </ThemeProvider>
       </body>
     </html>
