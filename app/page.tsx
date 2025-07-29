@@ -9,6 +9,7 @@ import { ReceivePage } from "@/components/receive-page"
 import { TransactionHistory } from "@/components/transaction-history"
 import { SettingsPage } from "@/components/settings-page"
 import { TPEDashboard } from "@/components/tpe-dashboard"
+import { TPEPinVerification } from "@/components/tpe-pin-verification"
 import { ErrorBoundary } from "@/components/error-boundary"
 import { SecureStorage } from "@/lib/secure-storage"
 
@@ -20,6 +21,7 @@ export type AppState =
   | "receive"
   | "history"
   | "settings"
+  | "tpe-pin-verification"
   | "tpe"
   | "tpe-search"
   | "tpe-billing"
@@ -103,6 +105,11 @@ export default function CryptoWalletApp() {
         return <TransactionHistory onNavigate={navigateTo} />
       case "settings":
         return <SettingsPage onNavigate={navigateTo} />
+      case "tpe-pin-verification":
+        return <TPEPinVerification 
+          onNavigate={navigateTo} 
+          onVerificationSuccess={() => navigateTo("tpe")}
+        />
       case "tpe":
       case "tpe-search":
       case "tpe-billing":

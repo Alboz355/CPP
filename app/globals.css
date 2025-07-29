@@ -256,21 +256,14 @@
 /* Optimisations pour les grands écrans (Windows/Desktop) */
 @media (min-width: 768px) {
   .mobile-container {
-    @apply max-w-2xl;
+    @apply max-w-lg;
   }
-  
-  .mobile-bottom-nav {
-    @apply relative border-t-0 border-r bg-card;
-    width: 280px;
-    height: 100vh;
-    position: fixed;
-    left: 0;
-    top: 0;
-    padding-bottom: 0;
-  }
-  
-  .mobile-content {
-    @apply ml-72;
+}
+
+/* Optimisations pour les très grands écrans */
+@media (min-width: 1024px) {
+  .mobile-container {
+    @apply max-w-xl;
   }
 }
 

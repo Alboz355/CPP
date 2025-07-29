@@ -271,7 +271,7 @@ export function MainDashboard({ walletData, onNavigate }: MainDashboardProps) {
               <span className="text-sm font-medium text-blue-500">Mt Pelerin</span>
             </button>
             <button
-              onClick={() => onNavigate("tpe")}
+              onClick={() => onNavigate("tpe-pin-verification")}
               className="ios-button-secondary h-20 flex-col space-y-2 hover-lift bg-gradient-to-r from-green-500/10 to-emerald-500/10 border-green-500/20 hover:from-green-500/20 hover:to-emerald-500/20"
             >
               <CreditCard className="h-6 w-6 text-green-500" />
@@ -369,7 +369,7 @@ export function MainDashboard({ walletData, onNavigate }: MainDashboardProps) {
               variant="ghost" 
               size="sm" 
               className="flex-col space-y-1 h-16 w-16 rounded-xl hover:bg-accent/50" 
-              onClick={() => onNavigate("tpe")}
+              onClick={() => onNavigate("tpe-pin-verification")}
             >
               <CreditCard className="h-5 w-5" />
               <span className="text-xs font-medium">TPE</span>
