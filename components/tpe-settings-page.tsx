@@ -8,9 +8,8 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
+import { StandardizedHeader } from "@/components/standardized-header"
 import {
-  ArrowLeft,
-  Settings,
   Store,
   Bell,
   Shield,
@@ -148,20 +147,18 @@ export function TPESettingsPage({ onNavigate }: TPESettingsPageProps) {
   }
 
   return (
-    <div className="min-h-screen p-4 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <Button variant="ghost" size="icon" onClick={() => onNavigate("tpe")}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold">Paramètres TPE</h1>
-            <p className="text-gray-600">Configuration du terminal de paiement</p>
-          </div>
-        </div>
-
-        <div className="flex space-x-2">
+    <div className="min-h-screen bg-background">
+      <StandardizedHeader
+        title="Paramètres TPE"
+        subtitle="Configuration du terminal de paiement"
+        backPage="tpe"
+        onNavigate={onNavigate}
+        showSettings={false}
+      />
+      
+      <div className="p-4 space-y-6">
+        {/* Action buttons */}
+        <div className="flex justify-end space-x-2">
           <Button variant="outline" onClick={resetSettings}>
             <RotateCcw className="h-4 w-4 mr-2" />
             Réinitialiser
@@ -171,7 +168,6 @@ export function TPESettingsPage({ onNavigate }: TPESettingsPageProps) {
             Sauvegarder
           </Button>
         </div>
-      </div>
 
       {/* Informations commerciales */}
       <Card>
@@ -282,7 +278,7 @@ export function TPESettingsPage({ onNavigate }: TPESettingsPageProps) {
           <div className="flex items-center justify-between">
             <div>
               <Label className="text-base">Conversion automatique en CHFM</Label>
-              <p className="text-sm text-gray-600">Convertir automatiquement les cryptos reçues</p>
+              <p className="text-sm text-muted-foreground">Convertir automatiquement les cryptos reçues</p>
             </div>
             <Switch
               checked={settings.autoConvertEnabled}
@@ -314,7 +310,7 @@ export function TPESettingsPage({ onNavigate }: TPESettingsPageProps) {
               <Calculator className="h-4 w-4 mr-2" />
               Gestion TVA automatique
             </Button>
-            <p className="text-sm text-gray-600 mt-2">Configurer le calcul et transfert automatique de la TVA</p>
+            <p className="text-sm text-muted-foreground mt-2">Configurer le calcul et transfert automatique de la TVA</p>
           </div>
         </CardContent>
       </Card>
@@ -333,7 +329,7 @@ export function TPESettingsPage({ onNavigate }: TPESettingsPageProps) {
               <Mail className="h-4 w-4" />
               <div>
                 <Label className="text-base">Notifications email</Label>
-                <p className="text-sm text-gray-600">Recevoir les confirmations par email</p>
+                <p className="text-sm text-muted-foreground">Recevoir les confirmations par email</p>
               </div>
             </div>
             <Switch
@@ -347,7 +343,7 @@ export function TPESettingsPage({ onNavigate }: TPESettingsPageProps) {
               <Smartphone className="h-4 w-4" />
               <div>
                 <Label className="text-base">Notifications SMS</Label>
-                <p className="text-sm text-gray-600">Recevoir les alertes par SMS</p>
+                <p className="text-sm text-muted-foreground">Recevoir les alertes par SMS</p>
               </div>
             </div>
             <Switch
@@ -361,7 +357,7 @@ export function TPESettingsPage({ onNavigate }: TPESettingsPageProps) {
               <Bell className="h-4 w-4" />
               <div>
                 <Label className="text-base">Notifications push</Label>
-                <p className="text-sm text-gray-600">Notifications dans l'application</p>
+                <p className="text-sm text-muted-foreground">Notifications dans l'application</p>
               </div>
             </div>
             <Switch
@@ -384,7 +380,7 @@ export function TPESettingsPage({ onNavigate }: TPESettingsPageProps) {
           <div className="flex items-center justify-between">
             <div>
               <Label className="text-base">Exiger un PIN</Label>
-              <p className="text-sm text-gray-600">Demander le PIN pour chaque transaction</p>
+              <p className="text-sm text-muted-foreground">Demander le PIN pour chaque transaction</p>
             </div>
             <Switch
               checked={settings.requirePin}
@@ -441,7 +437,7 @@ export function TPESettingsPage({ onNavigate }: TPESettingsPageProps) {
           <div className="flex items-center justify-between">
             <div>
               <Label className="text-base">Reconnexion automatique</Label>
-              <p className="text-sm text-gray-600">Se reconnecter automatiquement au TPE</p>
+              <p className="text-sm text-muted-foreground">Se reconnecter automatiquement au TPE</p>
             </div>
             <Switch
               checked={settings.tpeAutoReconnect}
@@ -452,7 +448,7 @@ export function TPESettingsPage({ onNavigate }: TPESettingsPageProps) {
           <div className="flex items-center justify-between">
             <div>
               <Label className="text-base">Sons du terminal</Label>
-              <p className="text-sm text-gray-600">Activer les bips de confirmation</p>
+              <p className="text-sm text-muted-foreground">Activer les bips de confirmation</p>
             </div>
             <Switch
               checked={settings.tpeSoundEnabled}
@@ -479,6 +475,7 @@ export function TPESettingsPage({ onNavigate }: TPESettingsPageProps) {
           </CardContent>
         </Card>
       )}
+      </div>
     </div>
   )
 }

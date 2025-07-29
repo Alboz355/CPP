@@ -3,14 +3,13 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { StandardizedHeader } from "@/components/standardized-header"
 import {
-  ArrowLeft,
   CreditCard,
   Search,
   Calculator,
   ArrowLeftRight,
   History,
-  Settings,
   Wifi,
   WifiOff,
   TrendingUp,
@@ -55,7 +54,7 @@ export function TPEMainPage({ onNavigate, walletData }: TPEMainPageProps) {
       description: "Scanner et connecter un terminal",
       icon: Search,
       action: () => onNavigate("tpe-search"),
-      color: "bg-blue-500",
+      color: "bg-primary",
       disabled: false,
     },
     {
@@ -63,7 +62,7 @@ export function TPEMainPage({ onNavigate, walletData }: TPEMainPageProps) {
       description: "Créer une facture client",
       icon: Calculator,
       action: () => onNavigate("tpe-billing"),
-      color: "bg-green-500",
+      color: "bg-green-500 dark:bg-green-600",
       disabled: !tpeConnected,
     },
     {
@@ -71,7 +70,7 @@ export function TPEMainPage({ onNavigate, walletData }: TPEMainPageProps) {
       description: "Convertir en stablecoin CHF",
       icon: ArrowLeftRight,
       action: () => onNavigate("tpe-conversion"),
-      color: "bg-purple-500",
+      color: "bg-purple-500 dark:bg-purple-600",
       disabled: false,
     },
     {
@@ -79,31 +78,24 @@ export function TPEMainPage({ onNavigate, walletData }: TPEMainPageProps) {
       description: "Transactions et statistiques",
       icon: History,
       action: () => onNavigate("tpe-history"),
-      color: "bg-orange-500",
+      color: "bg-orange-500 dark:bg-orange-600",
       disabled: false,
     },
   ]
 
   return (
-    <div className="min-h-screen p-4 space-y-6 bg-gradient-to-br from-slate-50 to-blue-50">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <Button variant="ghost" size="icon" onClick={() => onNavigate("dashboard")}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Mode TPE</h1>
-            <p className="text-gray-600">Terminal de Paiement Électronique</p>
-          </div>
-        </div>
-        <Button variant="ghost" size="icon" onClick={() => onNavigate("tpe-settings")}>
-          <Settings className="h-5 w-5" />
-        </Button>
-      </div>
-
-      {/* Statut de connexion */}
-      <Card>
+    <div className="min-h-screen bg-background">
+      <StandardizedHeader
+        title="Mode TPE"
+        subtitle="Terminal de Paiement Électronique"
+        backPage="dashboard"
+        onNavigate={onNavigate}
+        onSettings={() => onNavigate("tpe-settings")}
+      />
+      
+      <div className="p-4 space-y-6">
+        {/* Statut de connexion */}
+        <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg flex items-center space-x-2">
@@ -112,7 +104,7 @@ export function TPEMainPage({ onNavigate, walletData }: TPEMainPageProps) {
             </CardTitle>
             <Badge
               variant={tpeConnected ? "default" : "secondary"}
-              className={tpeConnected ? "bg-green-100 text-green-800" : ""}
+              className={tpeConnected ? "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200" : ""}
             >
               {tpeConnected ? (
                 <div className="flex items-center space-x-1">
@@ -132,23 +124,23 @@ export function TPEMainPage({ onNavigate, walletData }: TPEMainPageProps) {
           {tpeConnected ? (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Terminal connecté:</span>
-                <span className="font-medium">{connectedDevice}</span>
+                <span className="text-sm text-muted-foreground">Terminal connecté:</span>
+                <span className="font-medium text-foreground">{connectedDevice}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Type de connexion:</span>
+                <span className="text-sm text-muted-foreground">Type de connexion:</span>
                 <Badge variant="outline">Bluetooth</Badge>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Statut:</span>
-                <span className="text-green-600 font-medium">Prêt pour paiements</span>
+                <span className="text-sm text-muted-foreground">Statut:</span>
+                <span className="text-green-600 dark:text-green-400 font-medium">Prêt pour paiements</span>
               </div>
             </div>
           ) : (
             <div className="text-center py-4">
-              <WifiOff className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-              <p className="text-gray-600 mb-4">Aucun terminal connecté</p>
-              <Button onClick={() => onNavigate("tpe-search")} className="bg-blue-600 hover:bg-blue-700">
+              <WifiOff className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+              <p className="text-muted-foreground mb-4">Aucun terminal connecté</p>
+              <Button onClick={() => onNavigate("tpe-search")} className="bg-primary hover:bg-primary/90">
                 <Search className="h-4 w-4 mr-2" />
                 Rechercher un TPE
               </Button>
@@ -172,16 +164,16 @@ export function TPEMainPage({ onNavigate, walletData }: TPEMainPageProps) {
         <CardContent>
           <div className="grid grid-cols-3 gap-4">
             <div className="text-center">
-              <p className="text-2xl font-bold text-blue-600">{todayStats.transactions}</p>
-              <p className="text-sm text-gray-600">Transactions</p>
+              <p className="text-2xl font-bold text-primary">{todayStats.transactions}</p>
+              <p className="text-sm text-muted-foreground">Transactions</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold text-green-600">{todayStats.volume} CHF</p>
-              <p className="text-sm text-gray-600">Volume</p>
+              <p className="text-2xl font-bold text-green-600 dark:text-green-400">{todayStats.volume} CHF</p>
+              <p className="text-sm text-muted-foreground">Volume</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold text-purple-600">{todayStats.converted} CHFM</p>
-              <p className="text-sm text-gray-600">Converti</p>
+              <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{todayStats.converted} CHFM</p>
+              <p className="text-sm text-muted-foreground">Converti</p>
             </div>
           </div>
         </CardContent>
@@ -201,8 +193,8 @@ export function TPEMainPage({ onNavigate, walletData }: TPEMainPageProps) {
                   <action.icon className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-medium text-gray-900">{action.title}</h3>
-                  <p className="text-sm text-gray-600 mt-1">{action.description}</p>
+                  <h3 className="font-medium text-foreground">{action.title}</h3>
+                  <p className="text-sm text-muted-foreground mt-1">{action.description}</p>
                 </div>
                 {action.disabled && (
                   <Badge variant="secondary" className="text-xs">
@@ -228,23 +220,23 @@ export function TPEMainPage({ onNavigate, walletData }: TPEMainPageProps) {
         <CardContent>
           <div className="space-y-3">
             {/* Exemple de transactions */}
-            <div className="flex items-center justify-between py-2 border-b">
+            <div className="flex items-center justify-between py-2 border-b border-border">
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                  <Euro className="h-4 w-4 text-green-600" />
+                <div className="w-8 h-8 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center">
+                  <Euro className="h-4 w-4 text-green-600 dark:text-green-400" />
                 </div>
                 <div>
-                  <p className="font-medium">Paiement reçu</p>
-                  <p className="text-sm text-gray-600">il y a 2h</p>
+                  <p className="font-medium text-foreground">Paiement reçu</p>
+                  <p className="text-sm text-muted-foreground">il y a 2h</p>
                 </div>
               </div>
               <div className="text-right">
-                <p className="font-medium text-green-600">+25.50 CHF</p>
-                <p className="text-sm text-gray-600">ETH → CHFM</p>
+                <p className="font-medium text-green-600 dark:text-green-400">+25.50 CHF</p>
+                <p className="text-sm text-muted-foreground">ETH → CHFM</p>
               </div>
             </div>
 
-            <div className="text-center py-4 text-gray-500">
+            <div className="text-center py-4 text-muted-foreground">
               <p className="text-sm">Aucune transaction aujourd'hui</p>
             </div>
           </div>
@@ -252,15 +244,15 @@ export function TPEMainPage({ onNavigate, walletData }: TPEMainPageProps) {
       </Card>
 
       {/* Info */}
-      <Card className="bg-blue-50 border-blue-200">
+      <Card className="bg-accent/50 border-accent">
         <CardContent className="pt-6">
           <div className="flex items-start space-x-3">
-            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-              <CreditCard className="h-4 w-4 text-blue-600" />
+            <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+              <CreditCard className="h-4 w-4 text-primary" />
             </div>
             <div className="flex-1">
-              <h3 className="font-medium text-blue-900">Mode TPE Professionnel</h3>
-              <p className="text-sm text-blue-700 mt-1">
+              <h3 className="font-medium text-foreground">Mode TPE Professionnel</h3>
+              <p className="text-sm text-muted-foreground mt-1">
                 Acceptez les paiements crypto via votre terminal physique. Conversion automatique en CHFM pour une
                 stabilité maximale.
               </p>
@@ -268,6 +260,7 @@ export function TPEMainPage({ onNavigate, walletData }: TPEMainPageProps) {
           </div>
         </CardContent>
       </Card>
+      </div>
     </div>
   )
 }
