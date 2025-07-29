@@ -11,7 +11,9 @@ import { SettingsPage } from "@/components/settings-page"
 import { TPEDashboard } from "@/components/tpe-dashboard"
 import { TPEPinVerification } from "@/components/tpe-pin-verification"
 import { ErrorBoundary } from "@/components/error-boundary"
+import { DesktopLayout } from "@/components/desktop-layout"
 import { SecureStorage } from "@/lib/secure-storage"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 export type AppState =
   | "onboarding"
@@ -35,6 +37,7 @@ export default function CryptoWalletApp() {
   const [currentPage, setCurrentPage] = useState<AppState>("onboarding")
   const [walletData, setWalletData] = useState<any>(null)
   const [pin, setPin] = useState<string>("")
+  const isMobile = useIsMobile()
 
   // Verify app state on startup using secure storage
   useEffect(() => {
@@ -124,9 +127,28 @@ export default function CryptoWalletApp() {
     }
   }
 
+  const pageContent = renderCurrentPage()
+
+  // For onboarding and pin setup, always use mobile layout
+  const shouldUseDesktopLayout = !isMobile && 
+    currentPage !== "onboarding" && 
+    currentPage !== "pin-setup"
+
   return (
     <ErrorBoundary>
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">{renderCurrentPage()}</div>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-background dark:to-accent/5">
+        {shouldUseDesktopLayout ? (
+          <DesktopLayout 
+            currentPage={currentPage} 
+            onNavigate={navigateTo} 
+            walletData={walletData}
+          >
+            {pageContent}
+          </DesktopLayout>
+        ) : (
+          pageContent
+        )}
+      </div>
     </ErrorBoundary>
   )
 }

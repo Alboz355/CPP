@@ -42,7 +42,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange={false}
         >
-          <div className="mobile-container">
+          <div className="mobile-container desktop:hidden">
             {children}
           </div>
           <Toaster 

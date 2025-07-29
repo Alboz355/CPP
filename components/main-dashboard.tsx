@@ -23,6 +23,7 @@ import { LoadingFallback } from "@/components/loading-fallback"
 import { CryptoList } from "@/components/crypto-list"
 import { MtPelerinWidget } from "@/components/mt-pelerin-widget"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { useIsMobile } from "@/hooks/use-mobile"
 import { notify } from "@/lib/notifications"
 
 interface MainDashboardProps {
@@ -34,6 +35,7 @@ export function MainDashboard({ walletData, onNavigate }: MainDashboardProps) {
   const [showBalance, setShowBalance] = useState(true)
   const [showMtPelerin, setShowMtPelerin] = useState(false)
   const [mtPelerinAction, setMtPelerinAction] = useState<"buy" | "sell" | "swap">("buy")
+  const isMobile = useIsMobile()
 
   // États pour les données blockchain
   const [blockchainBalances, setBlockchainBalances] = useState<BlockchainBalance[]>([])
@@ -122,6 +124,207 @@ export function MainDashboard({ walletData, onNavigate }: MainDashboardProps) {
     setMtPelerinAction(action)
     setShowMtPelerin(true)
   }
+
+  // Render desktop layout if not mobile
+  if (!isMobile) {
+    return (
+      <>
+        <div className="desktop-grid">
+          {/* Balance Card */}
+          <div className="desktop-card col-span-full">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="heading-3">Solde total</h2>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => setShowBalance(!showBalance)}
+                className="h-8 w-8 rounded-lg hover:bg-accent/50"
+              >
+                {showBalance ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </Button>
+            </div>
+
+            {isLoading ? (
+              <div className="space-y-3">
+                <div className="h-12 bg-muted/50 rounded-lg animate-pulse"></div>
+                <div className="h-4 bg-muted/30 rounded-lg animate-pulse w-1/3"></div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between">
+                <div className="space-y-2">
+                  <div className="text-5xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                    {showBalance ? `$${totalBalance.toLocaleString()}` : "••••••"}
+                  </div>
+                  {lastUpdate && (
+                    <div className="caption-text">
+                      Dernière mise à jour: {lastUpdate.toLocaleTimeString()}
+                    </div>
+                  )}
+                </div>
+                <div className="text-right">
+                  <div className="flex items-center space-x-2 text-green-500 text-lg">
+                    <TrendingUp className="h-6 w-6" />
+                    <span className="font-medium">+12.5% (24h)</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Quick Actions */}
+          <div className="desktop-card">
+            <h3 className="heading-3 mb-4">Actions rapides</h3>
+            <div className="grid grid-cols-2 gap-3">
+              <button 
+                onClick={() => onNavigate("send")} 
+                className="ios-button-primary h-16 flex-col space-y-2 hover-lift text-sm"
+              >
+                <Send className="h-5 w-5" />
+                <span>Envoyer</span>
+              </button>
+              <button 
+                onClick={() => onNavigate("receive")} 
+                className="ios-button-secondary h-16 flex-col space-y-2 hover-lift text-sm"
+              >
+                <Download className="h-5 w-5" />
+                <span>Recevoir</span>
+              </button>
+              <button
+                onClick={() => openMtPelerin("buy")}
+                className="ios-button-secondary h-16 flex-col space-y-2 hover-lift bg-gradient-to-r from-blue-500/10 to-purple-500/10 border-blue-500/20 hover:from-blue-500/20 hover:to-purple-500/20 text-sm"
+              >
+                <ShoppingCart className="h-5 w-5 text-blue-500" />
+                <span className="text-blue-500">Mt Pelerin</span>
+              </button>
+              <button
+                onClick={() => onNavigate("tpe-pin-verification")}
+                className="ios-button-secondary h-16 flex-col space-y-2 hover-lift bg-gradient-to-r from-green-500/10 to-emerald-500/10 border-green-500/20 hover:from-green-500/20 hover:to-emerald-500/20 text-sm"
+              >
+                <CreditCard className="h-5 w-5 text-green-500" />
+                <span className="text-green-500">Mode TPE</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Crypto Holdings */}
+          <div className="desktop-card lg:col-span-2">
+            <CryptoList walletData={walletData} onSend={(crypto) => onNavigate("send")} />
+          </div>
+
+          {/* Wallet Addresses */}
+          <div className="desktop-card">
+            <h3 className="heading-3 mb-4">Adresses du portefeuille</h3>
+            <div className="space-y-3">
+              {/* Ethereum */}
+              <div className="p-3 rounded-lg bg-accent/30 hover:bg-accent/50 transition-colors">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground">ETH</p>
+                    <p className="font-mono text-xs break-all text-muted-foreground">
+                      {walletData.addresses?.ethereum?.slice(0, 20) || "Non disponible"}...
+                    </p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => copyAddress(walletData.addresses?.ethereum || "", "ETH")}
+                    className="ml-2 h-8 w-8 rounded-lg hover:bg-accent"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* Bitcoin */}
+              <div className="p-3 rounded-lg bg-accent/30 hover:bg-accent/50 transition-colors">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground">BTC</p>
+                    <p className="font-mono text-xs break-all text-muted-foreground">
+                      {walletData.addresses?.bitcoin?.slice(0, 20) || "Non disponible"}...
+                    </p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => copyAddress(walletData.addresses?.bitcoin || "", "BTC")}
+                    className="ml-2 h-8 w-8 rounded-lg hover:bg-accent"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Real-time Prices */}
+          <div className="desktop-card">
+            <RealTimePrices />
+          </div>
+
+          {/* Recent Transactions */}
+          <div className="desktop-card lg:col-span-2">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="heading-3">Transactions récentes</h3>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => onNavigate("history")}
+                className="rounded-lg hover:bg-accent/50"
+              >
+                Voir tout
+              </Button>
+            </div>
+            <div className="space-y-3">
+              {recentTransactions.map((tx, index) => (
+                <div key={index} className="flex items-center justify-between p-3 rounded-lg hover:bg-accent/30 transition-colors">
+                  <div className="flex items-center space-x-3">
+                    <div
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                        tx.type === "received" 
+                          ? "bg-green-500/10 text-green-500" 
+                          : "bg-red-500/10 text-red-500"
+                      }`}
+                    >
+                      {tx.type === "received" ? (
+                        <Download className="h-5 w-5" />
+                      ) : (
+                        <Send className="h-5 w-5" />
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-foreground">
+                        {tx.type === "received" ? "Reçu" : "Envoyé"} {tx.crypto}
+                      </p>
+                      <p className="caption-text">{tx.time}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className={`text-sm font-medium ${
+                      tx.type === "received" ? "text-green-500" : "text-red-500"
+                    }`}>
+                      {tx.amount} {tx.crypto}
+                    </p>
+                    <p className="caption-text">{tx.value}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Mt Pelerin Widget Modal */}
+        <MtPelerinWidget
+          isOpen={showMtPelerin}
+          onClose={() => setShowMtPelerin(false)}
+          walletData={walletData}
+          defaultAction={mtPelerinAction}
+        />
+      </>
+    )
+  }
+
+  // Mobile layout (existing code)
 
   return (
     <>
