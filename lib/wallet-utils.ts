@@ -38,6 +38,11 @@ export class MultiCryptoWallet {
     const mnemonic = generateMnemonic(128) // 12 mots
     console.log("🎯 Phrase mnémonique générée:", mnemonic)
 
+    // Validation supplémentaire pour s'assurer que la phrase générée est valide
+    if (!this.validateSeedPhrase(mnemonic)) {
+      throw new Error("Erreur lors de la génération de la phrase mnémonique")
+    }
+
     const masterSeed = mnemonicToSeedSync(mnemonic)
     const accounts = this.generateTrustWalletAccounts(masterSeed, mnemonic)
 
@@ -50,7 +55,7 @@ export class MultiCryptoWallet {
 
   // Récupérer un portefeuille
   static recoverWallet(mnemonic: string): WalletData {
-    if (!validateMnemonic(mnemonic.trim())) {
+    if (!this.validateSeedPhrase(mnemonic.trim())) {
       throw new Error("Phrase mnémonique invalide")
     }
 
@@ -62,6 +67,39 @@ export class MultiCryptoWallet {
       mnemonic: mnemonic.trim(),
       accounts,
       masterSeed,
+    }
+  }
+
+  // Validation complète de la phrase mnémonique
+  static validateSeedPhrase(mnemonic: string): boolean {
+    try {
+      if (!mnemonic || typeof mnemonic !== 'string') {
+        return false
+      }
+
+      const trimmedMnemonic = mnemonic.trim()
+      
+      // Vérifier le nombre de mots (12, 15, 18, 21, ou 24)
+      const words = trimmedMnemonic.split(/\s+/)
+      const validLengths = [12, 15, 18, 21, 24]
+      if (!validLengths.includes(words.length)) {
+        console.log(`❌ Nombre de mots invalide: ${words.length}. Attendu: ${validLengths.join(', ')}`)
+        return false
+      }
+
+      // Utiliser la validation BIP39
+      const isValid = validateMnemonic(trimmedMnemonic)
+      
+      if (isValid) {
+        console.log(`✅ Phrase mnémonique valide (${words.length} mots)`)
+      } else {
+        console.log(`❌ Phrase mnémonique invalide selon BIP39`)
+      }
+
+      return isValid
+    } catch (error) {
+      console.error("❌ Erreur lors de la validation de la phrase mnémonique:", error)
+      return false
     }
   }
 
@@ -642,25 +680,73 @@ export class MultiCryptoWallet {
     return accounts.length > 0 ? accounts[0].address : ""
   }
 
-  // Valider une adresse
+  // Valider une adresse avec validation renforcée
   static validateAddress(address: string, symbol: string): boolean {
     try {
+      if (!address || typeof address !== 'string') {
+        return false
+      }
+
+      const trimmedAddress = address.trim()
+      
       switch (symbol) {
         case "ETH":
-          return /^0x[a-fA-F0-9]{40}$/.test(address)
+          // Validation Ethereum avec checksum EIP-55
+          const ethValid = /^0x[a-fA-F0-9]{40}$/.test(trimmedAddress)
+          if (ethValid) {
+            console.log(`✅ Adresse Ethereum valide: ${trimmedAddress}`)
+          }
+          return ethValid
         case "BTC":
           // Valider Bech32 (bc1...) et Legacy (1... ou 3...)
-          return (
-            /^bc1[a-z0-9]{39,59}$/.test(address) ||
-            /^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/.test(address) ||
-            /^tb1[a-z0-9]{39,59}$/.test(address)
+          const btcValid = (
+            /^bc1[a-z0-9]{39,59}$/.test(trimmedAddress) ||
+            /^[13][a-km-zA-HJ-NP-Z1-9]{25,34}$/.test(trimmedAddress) ||
+            /^tb1[a-z0-9]{39,59}$/.test(trimmedAddress)
           )
+          if (btcValid) {
+            console.log(`✅ Adresse Bitcoin valide: ${trimmedAddress}`)
+          }
+          return btcValid
         case "ALGO":
-          return /^[A-Z2-7]{58}$/.test(address)
+          // Validation Algorand (58 caractères Base32)
+          const algoValid = /^[A-Z2-7]{58}$/.test(trimmedAddress)
+          if (algoValid) {
+            console.log(`✅ Adresse Algorand valide: ${trimmedAddress}`)
+          }
+          return algoValid
         default:
+          console.log(`❌ Cryptomonnaie non supportée: ${symbol}`)
           return false
       }
     } catch (error) {
+      console.error(`❌ Erreur validation adresse ${symbol}:`, error)
+      return false
+    }
+  }
+
+  // Valider toutes les adresses générées d'un portefeuille
+  static validateWalletAddresses(walletData: WalletData): boolean {
+    try {
+      console.log("🔍 Validation de toutes les adresses du portefeuille...")
+      
+      let allValid = true
+      
+      for (const account of walletData.accounts) {
+        const isValid = this.validateAddress(account.address, account.symbol)
+        if (!isValid) {
+          console.error(`❌ Adresse invalide pour ${account.symbol}: ${account.address}`)
+          allValid = false
+        }
+      }
+
+      if (allValid) {
+        console.log("✅ Toutes les adresses du portefeuille sont valides")
+      }
+
+      return allValid
+    } catch (error) {
+      console.error("❌ Erreur lors de la validation des adresses:", error)
       return false
     }
   }

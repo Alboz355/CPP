@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { LanguageSelection } from "@/components/language-selection"
 import { OnboardingPage } from "@/components/onboarding-page"
 import { PinSetupPage } from "@/components/pin-setup-page"
 import { MainDashboard } from "@/components/main-dashboard"
@@ -11,8 +12,10 @@ import { SettingsPage } from "@/components/settings-page"
 import { TPEDashboard } from "@/components/tpe-dashboard"
 import { ErrorBoundary } from "@/components/error-boundary"
 import { SecureStorage } from "@/lib/secure-storage"
+import { Language } from "@/lib/i18n"
 
 export type AppState =
+  | "language-selection"
   | "onboarding"
   | "pin-setup"
   | "dashboard"
@@ -30,21 +33,35 @@ export type AppState =
   | "tpe-vat"
 
 export default function CryptoWalletApp() {
-  const [currentPage, setCurrentPage] = useState<AppState>("onboarding")
+  const [currentPage, setCurrentPage] = useState<AppState>("language-selection")
   const [walletData, setWalletData] = useState<any>(null)
   const [pin, setPin] = useState<string>("")
+  const [selectedLanguage, setSelectedLanguage] = useState<Language | null>(null)
 
   // Verify app state on startup using secure storage
   useEffect(() => {
     const loadSecureData = async () => {
       try {
-        const savedWallet = await SecureStorage.getItem("wallet")
-        const savedPin = await SecureStorage.getItem("pin")
+        // Check for saved language preference first
+        const savedLanguage = await SecureStorage.getItem("language")
+        if (savedLanguage) {
+          const language = JSON.parse(savedLanguage)
+          setSelectedLanguage(language)
+          
+          // Only then check for wallet data
+          const savedWallet = await SecureStorage.getItem("wallet")
+          const savedPin = await SecureStorage.getItem("pin")
 
-        if (savedWallet && savedPin) {
-          setCurrentPage("dashboard")
-          setWalletData(JSON.parse(savedWallet))
-          setPin(savedPin)
+          if (savedWallet && savedPin) {
+            setCurrentPage("dashboard")
+            setWalletData(JSON.parse(savedWallet))
+            setPin(savedPin)
+          } else {
+            setCurrentPage("onboarding")
+          }
+        } else {
+          // No language preference saved, show language selection
+          setCurrentPage("language-selection")
         }
       } catch (error) {
         console.error("Failed to load secure data:", error)
@@ -61,6 +78,25 @@ export default function CryptoWalletApp() {
           localStorage.removeItem("wallet")
           localStorage.removeItem("pin")
           
+          // Check for saved language or default to French
+          const savedLanguage = localStorage.getItem("language")
+          if (savedLanguage) {
+            const language = JSON.parse(savedLanguage)
+            setSelectedLanguage(language)
+            await SecureStorage.setItem("language", savedLanguage)
+            localStorage.removeItem("language")
+          } else {
+            // Default to French
+            const defaultLanguage: Language = {
+              code: "fr",
+              name: "French",
+              flag: "🇫🇷",
+              nativeName: "Français"
+            }
+            setSelectedLanguage(defaultLanguage)
+            await SecureStorage.setItem("language", JSON.stringify(defaultLanguage))
+          }
+          
           setCurrentPage("dashboard")
           setWalletData(JSON.parse(oldWallet))
           setPin(oldPin)
@@ -70,6 +106,12 @@ export default function CryptoWalletApp() {
     
     loadSecureData()
   }, [])
+
+  const handleLanguageSelected = async (language: Language) => {
+    setSelectedLanguage(language)
+    await SecureStorage.setItem("language", JSON.stringify(language))
+    setCurrentPage("onboarding")
+  }
 
   const handleWalletCreated = async (wallet: any) => {
     setWalletData(wallet)
@@ -89,8 +131,10 @@ export default function CryptoWalletApp() {
 
   const renderCurrentPage = () => {
     switch (currentPage) {
+      case "language-selection":
+        return <LanguageSelection onLanguageSelected={handleLanguageSelected} />
       case "onboarding":
-        return <OnboardingPage onWalletCreated={handleWalletCreated} />
+        return selectedLanguage ? <OnboardingPage onWalletCreated={handleWalletCreated} selectedLanguage={selectedLanguage} /> : null
       case "pin-setup":
         return <PinSetupPage onPinCreated={handlePinCreated} />
       case "dashboard":
@@ -113,7 +157,7 @@ export default function CryptoWalletApp() {
       case "tpe-vat":
         return <TPEDashboard currentPage={currentPage} onNavigate={navigateTo} walletData={walletData} />
       default:
-        return <OnboardingPage onWalletCreated={handleWalletCreated} />
+        return selectedLanguage ? <OnboardingPage onWalletCreated={handleWalletCreated} selectedLanguage={selectedLanguage} /> : <LanguageSelection onLanguageSelected={handleLanguageSelected} />
     }
   }
 

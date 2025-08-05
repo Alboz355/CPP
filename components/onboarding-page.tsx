@@ -11,28 +11,42 @@ import { Wallet, Shield, Key, Copy, Eye, EyeOff } from "lucide-react"
 
 // Importer les nouveaux utilitaires
 import { MultiCryptoWallet } from "@/lib/wallet-utils"
+import { getTranslations, Language } from "@/lib/i18n"
 
 interface OnboardingPageProps {
   onWalletCreated: (wallet: any) => void
+  selectedLanguage: Language
 }
 
-export function OnboardingPage({ onWalletCreated }: OnboardingPageProps) {
+export function OnboardingPage({ onWalletCreated, selectedLanguage }: OnboardingPageProps) {
   const [seedPhrase, setSeedPhrase] = useState("")
   const [walletName, setWalletName] = useState("")
   const [generatedSeed, setGeneratedSeed] = useState("")
   const [showSeed, setShowSeed] = useState(false)
   const [seedConfirmed, setSeedConfirmed] = useState(false)
 
+  const t = getTranslations(selectedLanguage.code)
+
   const handleCreateWallet = () => {
     try {
       console.log("Création d'un nouveau portefeuille...")
       const walletData = MultiCryptoWallet.generateWallet()
 
-      console.log("Portefeuille créé:", walletData)
+      // Validation de la phrase générée
+      if (!MultiCryptoWallet.validateSeedPhrase(walletData.mnemonic)) {
+        throw new Error(t.generatedPhraseInvalid)
+      }
+
+      // Validation des adresses générées
+      if (!MultiCryptoWallet.validateWalletAddresses(walletData)) {
+        throw new Error(t.invalidAddresses)
+      }
+
+      console.log("Portefeuille créé avec succès:", walletData)
       setGeneratedSeed(walletData.mnemonic)
 
       const wallet = {
-        name: walletName || "Mon Portefeuille Multi-Crypto",
+        name: walletName || t.myMultiCryptoWallet,
         seedPhrase: walletData.mnemonic,
         accounts: walletData.accounts,
         addresses: {
@@ -53,7 +67,7 @@ export function OnboardingPage({ onWalletCreated }: OnboardingPageProps) {
       onWalletCreated(wallet)
     } catch (error) {
       console.error("Erreur lors de la création du portefeuille:", error)
-      alert("Erreur lors de la création du portefeuille: " + error)
+      alert(`${t.errorCreatingWallet}: ${error.message}`)
     }
   }
 
@@ -62,10 +76,21 @@ export function OnboardingPage({ onWalletCreated }: OnboardingPageProps) {
 
     try {
       console.log("Importation du portefeuille avec seed:", seedPhrase)
+      
+      // Validation de la phrase avant récupération
+      if (!MultiCryptoWallet.validateSeedPhrase(seedPhrase.trim())) {
+        throw new Error(t.invalidRecoveryPhrase)
+      }
+
       const walletData = MultiCryptoWallet.recoverWallet(seedPhrase.trim())
 
+      // Validation des adresses récupérées
+      if (!MultiCryptoWallet.validateWalletAddresses(walletData)) {
+        throw new Error(t.invalidAddresses)
+      }
+
       const wallet = {
-        name: walletName || "Portefeuille Importé",
+        name: walletName || t.importedWallet,
         seedPhrase: seedPhrase.trim(),
         accounts: walletData.accounts,
         addresses: {
@@ -82,11 +107,11 @@ export function OnboardingPage({ onWalletCreated }: OnboardingPageProps) {
         createdAt: new Date().toISOString(),
       }
 
-      console.log("Portefeuille importé:", wallet)
+      console.log("Portefeuille importé avec succès:", wallet)
       onWalletCreated(wallet)
     } catch (error) {
       console.error("Erreur lors de l'importation:", error)
-      alert("Phrase de récupération invalide: " + error)
+      alert(`${t.errorImporting}: ${error.message}`)
     }
   }
 
@@ -102,24 +127,24 @@ export function OnboardingPage({ onWalletCreated }: OnboardingPageProps) {
           <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
             <Wallet className="h-6 w-6 text-blue-600" />
           </div>
-          <h1 className="heading-1 mb-2">Bienvenue</h1>
-          <p className="body-text">Créez un portefeuille multi-crypto ou importez un portefeuille existant</p>
+          <h1 className="heading-1 mb-2">{t.welcome}</h1>
+          <p className="body-text">{t.createMultiCryptoWallet}</p>
         </div>
         <div>
           <Tabs defaultValue="create" className="w-full">
             <TabsList className="grid w-full grid-cols-2 rounded-xl bg-accent/30">
-              <TabsTrigger value="create">Créer</TabsTrigger>
-              <TabsTrigger value="import">Importer</TabsTrigger>
+              <TabsTrigger value="create">{t.createWallet}</TabsTrigger>
+              <TabsTrigger value="import">{t.importWallet}</TabsTrigger>
             </TabsList>
 
             <TabsContent value="create" className="space-y-4">
               <div className="space-y-2">
                 <label htmlFor="wallet-name" className="text-sm font-medium text-foreground">
-                  Nom du portefeuille (optionnel)
+                  {t.walletNameOptional}
                 </label>
                 <Input
                   id="wallet-name"
-                  placeholder="Mon Portefeuille Multi-Crypto"
+                  placeholder={t.myMultiCryptoWallet}
                   value={walletName}
                   onChange={(e) => setWalletName(e.target.value)}
                   className="rounded-xl border-border/50 bg-accent/30"
@@ -132,8 +157,8 @@ export function OnboardingPage({ onWalletCreated }: OnboardingPageProps) {
                     <div className="flex items-start space-x-2">
                       <Shield className="h-5 w-5 text-yellow-500 mt-0.5" />
                       <div className="text-sm text-yellow-500">
-                        <p className="font-medium">Phrase de récupération générée !</p>
-                        <p>Sauvegardez cette phrase en lieu sûr. Elle permet de récupérer tous vos comptes crypto.</p>
+                        <p className="font-medium">{t.seedPhraseGenerated}</p>
+                        <p>{t.saveSeedPhraseSafely}</p>
                       </div>
                     </div>
                   </div>
@@ -141,7 +166,7 @@ export function OnboardingPage({ onWalletCreated }: OnboardingPageProps) {
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <label className="text-sm font-medium text-foreground">
-                        Votre phrase de récupération (12 mots)
+                        {t.yourRecoveryPhrase}
                       </label>
                       <div className="flex space-x-2">
                         <Button 
@@ -178,7 +203,7 @@ export function OnboardingPage({ onWalletCreated }: OnboardingPageProps) {
                       onChange={(e) => setSeedConfirmed(e.target.checked)}
                     />
                     <label htmlFor="seed-confirmed" className="text-sm text-foreground">
-                      J'ai sauvegardé ma phrase de récupération en lieu sûr
+                      {t.savedRecoveryPhrase}
                     </label>
                   </div>
                 </div>
@@ -186,19 +211,19 @@ export function OnboardingPage({ onWalletCreated }: OnboardingPageProps) {
 
               <div className="rounded-xl bg-blue-500/10 p-4 border border-blue-500/20">
                 <div className="text-sm text-blue-500">
-                  <p className="font-medium">Cryptomonnaies supportées :</p>
+                  <p className="font-medium">{t.supportedCryptocurrencies}</p>
                   <ul className="mt-1 list-disc list-inside space-y-1">
-                    <li>Bitcoin (BTC)</li>
-                    <li>Ethereum (ETH) + tokens ERC-20</li>
-                    <li>Algorand (ALGO)</li>
-                    <li>Possibilité d'ajouter d'autres comptes</li>
+                    <li>{t.bitcoin}</li>
+                    <li>{t.ethereum}</li>
+                    <li>{t.algorand}</li>
+                    <li>{t.addOtherAccounts}</li>
                   </ul>
                 </div>
               </div>
 
               {!generatedSeed ? (
                 <button onClick={handleCreateWallet} className="ios-button-primary w-full">
-                  Générer un nouveau portefeuille
+                  {t.generateNewWallet}
                 </button>
               ) : (
                 <button 
@@ -206,7 +231,7 @@ export function OnboardingPage({ onWalletCreated }: OnboardingPageProps) {
                   className="ios-button-primary w-full disabled:opacity-50" 
                   disabled={!seedConfirmed}
                 >
-                  Continuer avec ce portefeuille
+                  {t.continueWithWallet}
                 </button>
               )}
             </TabsContent>
@@ -214,11 +239,11 @@ export function OnboardingPage({ onWalletCreated }: OnboardingPageProps) {
             <TabsContent value="import" className="space-y-4">
               <div className="space-y-2">
                 <label htmlFor="wallet-name-import" className="text-sm font-medium text-foreground">
-                  Nom du portefeuille (optionnel)
+                  {t.walletNameOptional}
                 </label>
                 <Input
                   id="wallet-name-import"
-                  placeholder="Portefeuille Importé"
+                  placeholder={t.importedWallet}
                   value={walletName}
                   onChange={(e) => setWalletName(e.target.value)}
                   className="rounded-xl border-border/50 bg-accent/30"
@@ -227,11 +252,11 @@ export function OnboardingPage({ onWalletCreated }: OnboardingPageProps) {
 
               <div className="space-y-2">
                 <label htmlFor="seed-phrase" className="text-sm font-medium text-foreground">
-                  Phrase de récupération (12 ou 24 mots)
+                  {t.recoveryPhrase12Words}
                 </label>
                 <Textarea
                   id="seed-phrase"
-                  placeholder="Entrez votre phrase de récupération..."
+                  placeholder={t.enterRecoveryPhrase}
                   value={seedPhrase}
                   onChange={(e) => setSeedPhrase(e.target.value)}
                   rows={3}
@@ -243,10 +268,9 @@ export function OnboardingPage({ onWalletCreated }: OnboardingPageProps) {
                 <div className="flex items-start space-x-2">
                   <Key className="h-5 w-5 text-blue-500 mt-0.5" />
                   <div className="text-sm text-blue-500">
-                    <p className="font-medium">Sécurité</p>
+                    <p className="font-medium">{t.security}</p>
                     <p>
-                      Votre phrase de récupération génère automatiquement des comptes pour Bitcoin, Ethereum et
-                      Algorand.
+                      {t.saveSeedPhraseSafely}
                     </p>
                   </div>
                 </div>
@@ -257,7 +281,7 @@ export function OnboardingPage({ onWalletCreated }: OnboardingPageProps) {
                 className="ios-button-primary w-full disabled:opacity-50" 
                 disabled={!seedPhrase.trim()}
               >
-                Importer le portefeuille
+                {t.importWalletButton}
               </button>
             </TabsContent>
           </Tabs>
