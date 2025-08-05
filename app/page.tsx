@@ -136,7 +136,7 @@ export default function CryptoWalletApp() {
       case "onboarding":
         return selectedLanguage ? <OnboardingPage onWalletCreated={handleWalletCreated} selectedLanguage={selectedLanguage} /> : null
       case "pin-setup":
-        return <PinSetupPage onPinCreated={handlePinCreated} />
+        return selectedLanguage ? <PinSetupPage onPinCreated={handlePinCreated} selectedLanguage={selectedLanguage} /> : null
       case "dashboard":
         return <MainDashboard walletData={walletData} onNavigate={navigateTo} />
       case "send":
