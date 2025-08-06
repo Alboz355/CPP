@@ -65,7 +65,7 @@ workflows:
           echo "--- Building iOS unsigned .ipa ---"
           xcode-project build \
             --scheme "$XCODE_SCHEME" \
-            --project "ios/$XCODE_SCHEME.xcodeproj" \
+            --project "ios/$XCODE_SCHEME/$XCODE_SCHEME.xcodeproj" \
             --artifact-type ipa \
             --no-codesign
           echo "----------------------------------"
