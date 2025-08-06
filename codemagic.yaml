@@ -3,20 +3,22 @@ workflows:
   ios-build:
     name: Build iOS App
     instance_type: mac_mini_m1
+    
+    # C'est la ligne la plus importante. 
+    # Elle dit à Codemagic d'entrer dans ce dossier avant de lancer les commandes.
+    working_directory: crypto-app-info-main 
+    
     environment:
-      xcode: latest # ou une version spécifique comme 15.3
+      xcode: latest
       flutter: stable
     scripts:
       - name: Get Flutter packages
-        script: flutter pub get
+        script: | 
+          flutter pub get
         
       - name: Build iOS IPA
         script: | 
-          set -e # Fait échouer le script si une commande échoue
-          # Nettoyage du projet
-          flutter clean
-          # Lancement de la construction de l'IPA
+          set -e
           flutter build ipa --export-options-plist=ios/ExportOptions.plist
     artifacts:
       - build/ios/ipa/*.ipa
-      - $HOME/Library/Developer/Xcode/DerivedData/**/Logs/Build/*.log
