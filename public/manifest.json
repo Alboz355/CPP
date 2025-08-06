@@ -1,0 +1,64 @@
+{
+  "name": "Crypto Wallet App",
+  "short_name": "CryptoWallet",
+  "description": "Application de portefeuille crypto sécurisée développée en Suisse",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#3b82f6",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "fr",
+  "categories": ["finance", "utilities"],
+  "icons": [
+    {
+      "src": "/placeholder-logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/placeholder-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/placeholder.jpg",
+      "sizes": "390x844",
+      "type": "image/jpeg",
+      "platform": "ios",
+      "label": "Dashboard principal"
+    }
+  ],
+  "prefer_related_applications": false,
+  "related_applications": [],
+  "shortcuts": [
+    {
+      "name": "Envoyer",
+      "short_name": "Send",
+      "description": "Envoyer des cryptomonnaies",
+      "url": "/?action=send",
+      "icons": [
+        {
+          "src": "/placeholder-logo.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Recevoir",
+      "short_name": "Receive",
+      "description": "Recevoir des cryptomonnaies",
+      "url": "/?action=receive",
+      "icons": [
+        {
+          "src": "/placeholder-logo.png",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ]
+}

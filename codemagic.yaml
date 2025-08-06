@@ -1,0 +1,32 @@
+workflows:
+  ios_unsigned_build:
+    name: iOS unsigned build
+    environment:
+      xcode: latest
+      cocoapods: default
+      vars:
+        XCODE_WORKSPACE: "App.xcworkspace"
+        XCODE_SCHEME: "App"
+    scripts:
+      - name: Install dependencies
+        script: |
+          npm install
+      - name: Build the web app
+        script: |
+          npm run build
+      - name: Sync Capacitor with iOS
+        script: |
+          npx cap sync ios
+      - name: Build iOS unsigned .ipa
+        script: |
+          cd ios
+          xcodebuild -scheme "$XCODE_SCHEME" \
+            -workspace "$XCODE_WORKSPACE" \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build
+          mkdir -p Payload
+          cp -R build/Build/Products/Release-iphoneos/*.app Payload/
+          zip -r app.ipa Payload
+    artifacts:
+      - ios/app.ipa

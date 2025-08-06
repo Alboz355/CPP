@@ -1,0 +1,41 @@
+# Next.js
+.next/
+out/
+
+# Dependencies
+node_modules/
+.pnp/
+.pnp.js
+
+# TypeScript
+*.tsbuildinfo
+
+# Jest
+.jest/
+
+# Environments
+.env
+.env*.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Local storage
+.DS_Store
+*.pem
+
+# Vercel
+.vercel/
+
+# macOS
+.DS_Store
+
+# Editor directories and files
+.idea
+.vscode
+*.iml
+*.swp
+*.swo
