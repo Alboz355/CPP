@@ -1,72 +1,22 @@
+# codemagic.yaml
 workflows:
-  ios_unsigned_build:
-    name: iOS Unsigned Build
-    instance_type: mac_mini_m1 
+  ios-build:
+    name: Build iOS App
+    instance_type: mac_mini_m1
     environment:
-      vars:
-        XCODE_SCHEME: "App"
-    
+      xcode: latest # ou une version spécifique comme 15.3
+      flutter: stable
     scripts:
-      - name: Set up Node.js and npm
-        script: |
-          echo "--- Node.js and npm versions ---"
-          node -v
-          npm -v
-          echo "--------------------------------"
-      
-      - name: Install dependencies and check Capacitor CLI
-        script: |
-          echo "--- Installing npm dependencies ---"
-          # Utilisation de npm install pour une installation plus flexible
-          # par rapport à npm ci
-          npm install
-          
-          echo "--- Verifying Capacitor CLI presence ---"
-          # Vérifie si le binaire 'cap' est disponible dans le chemin d'accès local
-          if ! command -v cap &> /dev/null
-          then
-              echo "Capacitor CLI (cap) could not be found after npm install."
-              echo "Attempting to install it globally just for this environment."
-              # Si le binaire n'est pas là, on l'installe explicitement
-              npm install -g @capacitor/cli
-          fi
-          
-          echo "--- Capacitor CLI (cap) version check ---"
-          cap --version
-          
-          echo "----------------------------------------"
-          
-      - name: Build the web app
-        script: |
-          echo "--- Building the web app (Next.js) ---"
-          # Ce script va maintenant exécuter "next build && next export"
-          npm run build
-          echo "--- Listing contents of 'out' directory (Next.js build output) ---"
-          ls -la out/ # Vérifie que les fichiers statiques sont bien générés
-          echo "-------------------------------------------------------------------"
-      
-      - name: Sync Capacitor with iOS
-        script: |
-          echo "--- Syncing Capacitor with iOS project ---"
-          $(npm bin)/cap sync ios
-          echo "--- Listing contents of 'ios' directory after sync ---"
-          ls -la ios/ # Vérifie que les fichiers iOS ont été mis à jour
-          echo "------------------------------------------------------"
-      
-      - name: Install CocoaPods
-        script: |
-          echo "--- Installing CocoaPods dependencies ---"
-          cd ios
-          pod install
-          echo "-----------------------------------------"
-      
-      - name: Build iOS unsigned .ipa
-        script: |
-          echo "--- Building iOS unsigned .ipa ---"
-          xcode-project build-ipa \
-            --scheme "$XCODE_SCHEME" \
-            --project "ios/$XCODE_SCHEME/$XCODE_SCHEME.xcodeproj"
-          echo "----------------------------------"
-            
+      - name: Get Flutter packages
+        script: flutter pub get
+        
+      - name: Build iOS IPA
+        script: | 
+          set -e # Fait échouer le script si une commande échoue
+          # Nettoyage du projet
+          flutter clean
+          # Lancement de la construction de l'IPA
+          flutter build ipa --export-options-plist=ios/ExportOptions.plist
     artifacts:
-      - $CM_BUILD_DIR/**/*.ipa
+      - build/ios/ipa/*.ipa
+      - $HOME/Library/Developer/Xcode/DerivedData/**/Logs/Build/*.log
