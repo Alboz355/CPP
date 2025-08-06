@@ -1,4 +1,4 @@
-# codemagic.yaml - Approche finale pour contourner le bug de Yarn
+# codemagic.yaml - Solution finale avec Corepack
 workflows:
   ios-build:
     name: Build iOS App (Next.js + Capacitor)
@@ -8,12 +8,13 @@ workflows:
       xcode: latest
       cocoapods: default
     scripts:
-      - name: Installer les dépendances (méthode de contournement)
+      - name: Activer Corepack et Installer les dépendances
         script: | 
           set -ex 
-          # On installe yarn en utilisant npm pour l'isoler de la configuration globale
-          npm install -g yarn
-          # On exécute l'installation
+          # 1. On active l'outil officiel de Node.js pour gérer les versions de Yarn
+          corepack enable
+          
+          # 2. On lance l'installation. Corepack va automatiquement utiliser la bonne version de Yarn.
           yarn install
           
       - name: Construire l'application web
@@ -26,7 +27,6 @@ workflows:
       - name: Synchroniser avec le projet iOS natif
         script: |
           set -ex
-          # On utilise npx pour exécuter la commande capacitor
           npx cap sync ios
           
       - name: Installer les dépendances iOS (Pods)
