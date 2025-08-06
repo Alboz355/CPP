@@ -1,25 +1,48 @@
-# codemagic.yaml
+# codemagic.yaml - Configuration pour un projet Next.js + Capacitor
 workflows:
   ios-build:
-    name: Build iOS App - Diagnostic
+    name: Build iOS App (Next.js + Capacitor)
     instance_type: mac_mini_m1
-    
-    # On laisse le working_directory vide pour l'instant
-    
     environment:
+      node: 20 # Utilise une version récente de Node.js
       xcode: latest
-      flutter: stable
+      cocoapods: default
     scripts:
-      - name: 1. Lister tous les fichiers pour trouver le bon dossier
+      - name: Installer pnpm et les dépendances
         script: | 
-          echo "Listing de tous les fichiers depuis la racine du projet :"
-          ls -R
+          set -ex # Affiche les commandes et arrête si une erreur survient
+          npm install -g pnpm # Installe pnpm, le gestionnaire de paquets de votre projet
+          pnpm install --frozen-lockfile # Installe les dépendances Node.js
           
-      - name: 2. Entrez le nom du dossier dans working_directory
-        script: | 
-          echo "--------------------------------------------------------------------"
-          echo "MAINTENANT : Regardez le log ci-dessus."
-          echo "Repérez le dossier qui contient votre fichier 'pubspec.yaml'."
-          echo "Arrêtez ce build, et ajoutez ce nom de dossier dans la section 'working_directory' de votre codemagic.yaml"
-          echo "--------------------------------------------------------------------"
-          exit 1 # On arrête le build volontairement ici
+      - name: Installer Capacitor CLI
+        script: |
+          set -ex
+          pnpm add @capacitor/cli@latest
+          
+      - name: Construire l'application web
+        script: |
+          set -ex
+          pnpm build # Lance la commande de build de Next.js
+          
+      - name: Synchroniser avec le projet iOS natif
+        script: |
+          set -ex
+          npx cap sync ios
+          
+      - name: Installer les dépendances iOS (Pods)
+        script: |
+          set -ex
+          cd ios/App # Se déplace dans le bon dossier pour lancer la commande suivante
+          pod install
+
+      - name: Construire l'archive IPA
+        script: |
+          set -ex
+          xcode-project build-ipa \
+            --workspace "ios/App/App.xcworkspace" \
+            --scheme "App" \
+            --export-options "ios/ExportOptions.plist"
+            
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - $HOME/Library/Developer/Xcode/DerivedData/**/Logs/Build/*.log
