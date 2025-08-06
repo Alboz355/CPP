@@ -1,4 +1,4 @@
-# codemagic.yaml - Version finale, utilisant Yarn correctement
+# codemagic.yaml - Approche finale pour contourner le bug de Yarn
 workflows:
   ios-build:
     name: Build iOS App (Next.js + Capacitor)
@@ -8,11 +8,13 @@ workflows:
       xcode: latest
       cocoapods: default
     scripts:
-      - name: Installer les dépendances avec Yarn
+      - name: Installer les dépendances (méthode de contournement)
         script: | 
           set -ex 
-          # On utilise la commande moderne et on s'assure que tout est propre
-          yarn install --immutable
+          # On installe yarn en utilisant npm pour l'isoler de la configuration globale
+          npm install -g yarn
+          # On exécute l'installation
+          yarn install
           
       - name: Construire l'application web
         script: |
