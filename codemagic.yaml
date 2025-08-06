@@ -14,19 +14,28 @@ workflows:
           npm -v
           echo "--------------------------------"
       
-      - name: Install dependencies
+      - name: Install dependencies and check Capacitor CLI
         script: |
           echo "--- Installing npm dependencies ---"
-          npm ci
+          # Utilisation de npm install pour une installation plus flexible
+          # par rapport à npm ci
+          npm install
+          
           echo "--- Verifying Capacitor CLI presence ---"
-          if [ -f "$(npm bin)/cap" ]; then
-            echo "Capacitor CLI found at $(npm bin)/cap"
-          else
-            echo "Capacitor CLI NOT found. Please ensure @capacitor/cli is in your devDependencies."
-            exit 1
+          # Vérifie si le binaire 'cap' est disponible dans le chemin d'accès local
+          if ! command -v cap &> /dev/null
+          then
+              echo "Capacitor CLI (cap) could not be found after npm install."
+              echo "Attempting to install it globally just for this environment."
+              # Si le binaire n'est pas là, on l'installe explicitement
+              npm install -g @capacitor/cli
           fi
+          
+          echo "--- Capacitor CLI (cap) version check ---"
+          cap --version
+          
           echo "----------------------------------------"
-      
+          
       - name: Build the web app
         script: |
           echo "--- Building the web app (Next.js) ---"
