@@ -1,24 +1,25 @@
 # codemagic.yaml
 workflows:
   ios-build:
-    name: Build iOS App
+    name: Build iOS App - Diagnostic
     instance_type: mac_mini_m1
     
-    # C'est la ligne la plus importante. 
-    # Elle dit à Codemagic d'entrer dans ce dossier avant de lancer les commandes.
-    working_directory: crypto-app-info-main 
+    # On laisse le working_directory vide pour l'instant
     
     environment:
       xcode: latest
       flutter: stable
     scripts:
-      - name: Get Flutter packages
+      - name: 1. Lister tous les fichiers pour trouver le bon dossier
         script: | 
-          flutter pub get
-        
-      - name: Build iOS IPA
+          echo "Listing de tous les fichiers depuis la racine du projet :"
+          ls -R
+          
+      - name: 2. Entrez le nom du dossier dans working_directory
         script: | 
-          set -e
-          flutter build ipa --export-options-plist=ios/ExportOptions.plist
-    artifacts:
-      - build/ios/ipa/*.ipa
+          echo "--------------------------------------------------------------------"
+          echo "MAINTENANT : Regardez le log ci-dessus."
+          echo "Repérez le dossier qui contient votre fichier 'pubspec.yaml'."
+          echo "Arrêtez ce build, et ajoutez ce nom de dossier dans la section 'working_directory' de votre codemagic.yaml"
+          echo "--------------------------------------------------------------------"
+          exit 1 # On arrête le build volontairement ici
