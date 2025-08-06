@@ -1,58 +1,65 @@
 workflows:
   ios_unsigned_build:
     name: iOS Unsigned Build
-    instance_type: mac_mini_m1 # Recommandé pour des builds plus rapides
+    instance_type: mac_mini_m1 
     environment:
       vars:
         XCODE_SCHEME: "App"
-        # XCODE_WORKSPACE: "App.xcworkspace" # Généralement pas nécessaire si le schéma est correct
     
     scripts:
       - name: Set up Node.js and npm
         script: |
-          # Affiche les versions de Node.js et npm pour le débogage
+          echo "--- Node.js and npm versions ---"
           node -v
           npm -v
+          echo "--------------------------------"
       
       - name: Install dependencies
         script: |
-          # Installe toutes les dépendances du projet
+          echo "--- Installing npm dependencies ---"
           npm ci
-          # Vérifie si l'exécutable 'cap' est bien présent après l'installation
+          echo "--- Verifying Capacitor CLI presence ---"
           if [ -f "$(npm bin)/cap" ]; then
             echo "Capacitor CLI found at $(npm bin)/cap"
           else
             echo "Capacitor CLI NOT found. Please ensure @capacitor/cli is in your devDependencies."
-            exit 1 # Fait échouer le build si 'cap' n'est pas trouvé
+            exit 1
           fi
+          echo "----------------------------------------"
       
       - name: Build the web app
         script: |
-          # Exécute le script de build de votre application web (Next.js/React)
+          echo "--- Building the web app (Next.js) ---"
+          # Ce script va maintenant exécuter "next build && next export"
           npm run build
+          echo "--- Listing contents of 'out' directory (Next.js build output) ---"
+          ls -la out/ # Vérifie que les fichiers statiques sont bien générés
+          echo "-------------------------------------------------------------------"
       
       - name: Sync Capacitor with iOS
         script: |
-          # Synchronise le projet web avec le projet iOS de Capacitor
-          # Utilise le chemin explicite vers l'exécutable 'cap' pour plus de fiabilité
+          echo "--- Syncing Capacitor with iOS project ---"
           $(npm bin)/cap sync ios
+          echo "--- Listing contents of 'ios' directory after sync ---"
+          ls -la ios/ # Vérifie que les fichiers iOS ont été mis à jour
+          echo "------------------------------------------------------"
       
       - name: Install CocoaPods
         script: |
-          # Navigue vers le dossier 'ios' et installe les pods
+          echo "--- Installing CocoaPods dependencies ---"
           cd ios
           pod install
+          echo "-----------------------------------------"
       
       - name: Build iOS unsigned .ipa
         script: |
-          # Construit l'application iOS et exporte un fichier IPA non signé
-          # L'option --no-codesign est cruciale pour un IPA non signé
+          echo "--- Building iOS unsigned .ipa ---"
           xcode-project build \
             --scheme "$XCODE_SCHEME" \
             --project "ios/$XCODE_SCHEME.xcodeproj" \
             --artifact-type ipa \
             --no-codesign
+          echo "----------------------------------"
             
     artifacts:
-      # Chemin générique pour récupérer le fichier IPA généré par Codemagic
       - $CM_BUILD_DIR/**/*.ipa
