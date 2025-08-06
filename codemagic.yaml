@@ -1,4 +1,4 @@
-# codemagic.yaml - Version finale utilisant YARN
+# codemagic.yaml - Version finale, utilisant Yarn correctement
 workflows:
   ios-build:
     name: Build iOS App (Next.js + Capacitor)
@@ -11,24 +11,20 @@ workflows:
       - name: Installer les dépendances avec Yarn
         script: | 
           set -ex 
-          # On utilise yarn install comme demandé par le package.json
-          yarn install --frozen-lockfile
-          
-      - name: Installer Capacitor CLI
-        script: |
-          set -ex
-          # On ajoute capacitor/cli avec yarn
-          yarn add @capacitor/cli@latest
+          # On utilise la commande moderne et on s'assure que tout est propre
+          yarn install --immutable
           
       - name: Construire l'application web
         script: |
           set -ex
-          # On construit le projet avec yarn
+          # On ajoute capacitor/cli pour s'assurer qu'il est disponible
+          yarn add @capacitor/cli@latest
           yarn build
           
       - name: Synchroniser avec le projet iOS natif
         script: |
           set -ex
+          # On utilise npx pour exécuter la commande capacitor
           npx cap sync ios
           
       - name: Installer les dépendances iOS (Pods)
