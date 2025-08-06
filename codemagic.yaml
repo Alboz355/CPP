@@ -64,7 +64,7 @@ workflows:
         script: |
           echo "--- Building iOS unsigned .ipa ---"
           xcode-project build-ipa \
-             --scheme "$XCODE_SCHEME" \
+            --scheme "$XCODE_SCHEME" \
             --project "ios/$XCODE_SCHEME/$XCODE_SCHEME.xcodeproj"
           echo "----------------------------------"
             
