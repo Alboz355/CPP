@@ -2,6 +2,7 @@ workflows:
   ios_unsigned_build:
     name: iOS unsigned build
     environment:
+      os: macos
       xcode: latest
       cocoapods: default
       vars:
@@ -17,8 +18,9 @@ workflows:
       - name: Sync Capacitor with iOS
         script: |
           npx cap sync ios
-      - name: Install iOS pods
+      - name: Install CocoaPods
         script: |
+          sudo gem install cocoapods
           cd ios
           pod install
       - name: Build iOS unsigned .ipa
