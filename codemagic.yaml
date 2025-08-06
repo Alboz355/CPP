@@ -1,38 +1,37 @@
 workflows:
   ios_unsigned_build:
-    name: iOS unsigned build
+    name: Crypto Pay Pro
+    instance_type: mac_mini_m1 # Recommandé pour des builds plus rapides
     environment:
-      os: macos
-      xcode: latest
-      cocoapods: default
       vars:
-        XCODE_WORKSPACE: "App.xcworkspace"
         XCODE_SCHEME: "App"
+        # XCODE_WORKSPACE: "App.xcworkspace"
+    
     scripts:
       - name: Install dependencies
         script: |
           npm ci
+      
       - name: Build the web app
         script: |
           npm run build
+      
       - name: Sync Capacitor with iOS
         script: |
           npx cap sync ios
+      
       - name: Install CocoaPods
         script: |
-          sudo gem install cocoapods
           cd ios
           pod install
+      
       - name: Build iOS unsigned .ipa
         script: |
-          cd ios
-          xcodebuild -scheme "$XCODE_SCHEME" \
-            -workspace "$XCODE_WORKSPACE" \
-            -configuration Release \
-            -sdk iphoneos \
-            -derivedDataPath build
-          mkdir -p Payload
-          cp -R build/Build/Products/Release-iphoneos/*.app Payload/
-          zip -r app.ipa Payload
+          xcode-project build \
+            --scheme "$XCODE_SCHEME" \
+            --project "ios/$XCODE_SCHEME.xcodeproj" \
+            --artifact-type ipa \
+            --no-codesign
+            
     artifacts:
-      - ios/app.ipa
+      - $CM_BUILD_DIR/**/*.ipa
