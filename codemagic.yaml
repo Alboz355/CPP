@@ -1,48 +1,45 @@
-# codemagic.yaml - Solution finale avec Corepack
-workflows:
-  ios-build:
-    name: Build iOS App (Next.js + Capacitor)
-    instance_type: mac_mini_m1
-    environment:
-      node: 20
-      xcode: latest
-      cocoapods: default
-    scripts:
-      - name: Activer Corepack et Installer les dépendances
-        script: | 
-          set -ex 
-          # 1. On active l'outil officiel de Node.js pour gérer les versions de Yarn
-          corepack enable
-          
-          # 2. On lance l'installation. Corepack va automatiquement utiliser la bonne version de Yarn.
-          yarn install
-          
-      - name: Construire l'application web
-        script: |
-          set -ex
-          # On ajoute capacitor/cli pour s'assurer qu'il est disponible
-          yarn add @capacitor/cli@latest
-          yarn build
-          
-      - name: Synchroniser avec le projet iOS natif
-        script: |
-          set -ex
-          npx cap sync ios
-          
-      - name: Installer les dépendances iOS (Pods)
-        script: |
-          set -ex
-          cd ios/App 
-          pod install
+# Fichier : codemagic.yaml
 
-      - name: Construire l'archive IPA
-        script: |
-          set -ex
-          xcode-project build-ipa \
-            --workspace "ios/App/App.xcworkspace" \
-            --scheme "App" \
-            --export-options "ios/ExportOptions.plist"
-            
+workflows:
+  ios-app-sideload:
+    name: iOS App Build (pour Sideloadly)
+    environment:
+      xcode: latest
+      node: latest
+    scripts:
+      - name: Installer les dépendances
+        script: | 
+          npm install
+      - name: Construire l'application web
+        script: | 
+          npm run build
+      - name: Synchroniser avec le projet iOS natif
+        script: | 
+          npx cap sync ios
+      - name: Construire l'application (.app) sans signature
+        script: | 
+          xcodebuild build \
+            -workspace "$CM_BUILD_DIR/ios/App/App.xcworkspace" \
+            -scheme App \
+            -configuration Debug \
+            -sdk iphoneos \
+            -derivedDataPath "$CM_BUILD_DIR/build/ios/derived_data" \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO
+      - name: Créer le fichier .ipa manuellement
+        script: | 
+          # On trouve le fichier .app qui vient d'être créé
+          APP_PATH=$(find $CM_BUILD_DIR/build/ios/derived_data -name "*.app" | head -n 1)
+          
+          # On crée le dossier nécessaire
+          mkdir -p "$CM_BUILD_DIR/build/ios/ipa/Payload"
+          
+          # On copie l'application dans ce dossier
+          cp -R "$APP_PATH" "$CM_BUILD_DIR/build/ios/ipa/Payload/"
+          
+          # On se déplace dans le dossier et on compresse pour créer le .ipa
+          cd "$CM_BUILD_DIR/build/ios/ipa"
+          zip -r "CryptoPayPro.ipa" "Payload"
     artifacts:
+      # On dit à Codemagic où trouver le fichier .ipa final
       - build/ios/ipa/*.ipa
-      - $HOME/Library/Developer/Xcode/DerivedData/**/Logs/Build/*.log
