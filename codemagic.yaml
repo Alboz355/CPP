@@ -16,7 +16,7 @@ workflows:
           npm run build
       - name: Sync Capacitor with iOS
         script: |
-          ./node_modules/.bin/cap sync ios
+          npx cap sync ios
       - name: Build iOS unsigned .ipa
         script: |
           cd ios
