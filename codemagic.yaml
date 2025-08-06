@@ -1,4 +1,4 @@
-# codemagic.yaml - Version corrigée
+# codemagic.yaml - Version finale utilisant YARN
 workflows:
   ios-build:
     name: Build iOS App (Next.js + Capacitor)
@@ -8,22 +8,23 @@ workflows:
       xcode: latest
       cocoapods: default
     scripts:
-      - name: Installer les dépendances avec pnpm
+      - name: Installer les dépendances avec Yarn
         script: | 
-          set -ex # Affiche les commandes et arrête si une erreur survient
-          # La ligne "npm install -g pnpm" a été retirée car pnpm est déjà installé
-          pnpm install --frozen-lockfile # Installe les dépendances Node.js
+          set -ex 
+          # On utilise yarn install comme demandé par le package.json
+          yarn install --frozen-lockfile
           
       - name: Installer Capacitor CLI
         script: |
           set -ex
-          # On s'assure que @capacitor/cli est bien une dépendance du projet
-          pnpm add @capacitor/cli@latest
+          # On ajoute capacitor/cli avec yarn
+          yarn add @capacitor/cli@latest
           
       - name: Construire l'application web
         script: |
           set -ex
-          pnpm build # Lance la commande de build de Next.js
+          # On construit le projet avec yarn
+          yarn build
           
       - name: Synchroniser avec le projet iOS natif
         script: |
@@ -33,7 +34,7 @@ workflows:
       - name: Installer les dépendances iOS (Pods)
         script: |
           set -ex
-          cd ios/App # Se déplace dans le bon dossier pour lancer la commande suivante
+          cd ios/App 
           pod install
 
       - name: Construire l'archive IPA
