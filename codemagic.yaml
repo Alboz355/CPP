@@ -1,32 +1,52 @@
 workflows:
   ios_unsigned_build:
-    name: Crypto Pay Pro
+    name: iOS Unsigned Build
     instance_type: mac_mini_m1 # Recommandé pour des builds plus rapides
     environment:
       vars:
         XCODE_SCHEME: "App"
-        # XCODE_WORKSPACE: "App.xcworkspace"
+        # XCODE_WORKSPACE: "App.xcworkspace" # Généralement pas nécessaire si le schéma est correct
     
     scripts:
+      - name: Set up Node.js and npm
+        script: |
+          # Affiche les versions de Node.js et npm pour le débogage
+          node -v
+          npm -v
+      
       - name: Install dependencies
         script: |
+          # Installe toutes les dépendances du projet
           npm ci
+          # Vérifie si l'exécutable 'cap' est bien présent après l'installation
+          if [ -f "$(npm bin)/cap" ]; then
+            echo "Capacitor CLI found at $(npm bin)/cap"
+          else
+            echo "Capacitor CLI NOT found. Please ensure @capacitor/cli is in your devDependencies."
+            exit 1 # Fait échouer le build si 'cap' n'est pas trouvé
+          fi
       
       - name: Build the web app
         script: |
+          # Exécute le script de build de votre application web (Next.js/React)
           npm run build
       
       - name: Sync Capacitor with iOS
         script: |
-          npx cap sync ios
+          # Synchronise le projet web avec le projet iOS de Capacitor
+          # Utilise le chemin explicite vers l'exécutable 'cap' pour plus de fiabilité
+          $(npm bin)/cap sync ios
       
       - name: Install CocoaPods
         script: |
+          # Navigue vers le dossier 'ios' et installe les pods
           cd ios
           pod install
       
       - name: Build iOS unsigned .ipa
         script: |
+          # Construit l'application iOS et exporte un fichier IPA non signé
+          # L'option --no-codesign est cruciale pour un IPA non signé
           xcode-project build \
             --scheme "$XCODE_SCHEME" \
             --project "ios/$XCODE_SCHEME.xcodeproj" \
@@ -34,4 +54,5 @@ workflows:
             --no-codesign
             
     artifacts:
+      # Chemin générique pour récupérer le fichier IPA généré par Codemagic
       - $CM_BUILD_DIR/**/*.ipa
