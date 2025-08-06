@@ -1,22 +1,23 @@
-# codemagic.yaml - Configuration pour un projet Next.js + Capacitor
+# codemagic.yaml - Version corrigée
 workflows:
   ios-build:
     name: Build iOS App (Next.js + Capacitor)
     instance_type: mac_mini_m1
     environment:
-      node: 20 # Utilise une version récente de Node.js
+      node: 20
       xcode: latest
       cocoapods: default
     scripts:
-      - name: Installer pnpm et les dépendances
+      - name: Installer les dépendances avec pnpm
         script: | 
           set -ex # Affiche les commandes et arrête si une erreur survient
-          npm install -g pnpm # Installe pnpm, le gestionnaire de paquets de votre projet
+          # La ligne "npm install -g pnpm" a été retirée car pnpm est déjà installé
           pnpm install --frozen-lockfile # Installe les dépendances Node.js
           
       - name: Installer Capacitor CLI
         script: |
           set -ex
+          # On s'assure que @capacitor/cli est bien une dépendance du projet
           pnpm add @capacitor/cli@latest
           
       - name: Construire l'application web
