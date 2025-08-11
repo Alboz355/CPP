@@ -1,12 +1,35 @@
-export const INFURA_PROJECT_ID = process.env.NEXT_PUBLIC_INFURA_PROJECT_ID || 'eae8428d4ae4477e946ac8f8301f2bce'
-export const INFURA_ETH_HTTP = `https://mainnet.infura.io/v3/${INFURA_PROJECT_ID}`
+// Configuration sécurisée - AUCUNE clé API ne doit être exposée côté client
+// Toutes les clés sensibles doivent être gérées côté serveur uniquement
 
-export const CMC_API_KEY = process.env.NEXT_PUBLIC_CMC_API_KEY || 'a9fac516-7d93-4479-a8cf-c2ef00e7cccf'
+export const INFURA_PROJECT_ID = process.env.NEXT_PUBLIC_INFURA_PROJECT_ID || ''
+export const INFURA_ETH_HTTP = INFURA_PROJECT_ID ? `https://mainnet.infura.io/v3/${INFURA_PROJECT_ID}` : ''
 
-export const BLOCKCYPHER_TOKEN = process.env.NEXT_PUBLIC_BLOCKCYPHER_TOKEN || '87bf93bb579c4af18b3ab8e7aed82960'
+// SÉCURITÉ CRITIQUE: Ces clés ne doivent JAMAIS être exposées côté client
+// Elles doivent être utilisées uniquement dans les API routes côté serveur
+export const CMC_API_KEY = process.env.CMC_API_KEY || '' // Server-only
+export const BLOCKCYPHER_TOKEN = process.env.BLOCKCYPHER_TOKEN || '' // Server-only
+export const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY || '' // Server-only
 
+// URLs publiques seulement (sans clés)
 export const ALGORAND_API_BASE = process.env.NEXT_PUBLIC_ALGORAND_API_BASE || 'https://mainnet-api.4160.nodely.dev'
+export const SOLANA_HTTP_URL = process.env.NEXT_PUBLIC_SOLANA_HTTP_URL || 'https://api.mainnet-beta.solana.com'
 
-export const SOLANA_HTTP_URL = process.env.NEXT_PUBLIC_SOLANA_HTTP_URL || 'https://solana-mainnet.api.syndica.io/api-key/349a1wJTv2Nb5X6pUP6tFvYSogMKsRNfVzUYep1zEE2QoR73M24qQ6R9T6KoAvPjV6oAjfxNuvxsrsztTBNRosbdqCnmedn3zhP'
-
-export const ETHERSCAN_API_KEY = process.env.NEXT_PUBLIC_ETHERSCAN_API_KEY || 'TY43QSBCUGSV48USXV3XF528S4C49SF9Y4'
+// Configuration de l'application
+export const APP_CONFIG = {
+  // URLs publiques autorisées
+  ALLOWED_ORIGINS: ['https://crypto-wallet.app', 'https://www.crypto-wallet.app'],
+  
+  // Limites de sécurité
+  MAX_TRANSACTION_AMOUNT: 10000, // CHF
+  MAX_DAILY_TRANSACTIONS: 50,
+  
+  // Configuration réseau
+  NETWORK: process.env.NODE_ENV === 'production' ? 'mainnet' : 'testnet',
+  
+  // Feature flags
+  FEATURES: {
+    BIOMETRIC_AUTH: true,
+    PRICE_ALERTS: true,
+    BACKUP_CODES: true
+  }
+} as const

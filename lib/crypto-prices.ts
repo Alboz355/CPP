@@ -1,23 +1,27 @@
-// Service de gestion des prix des cryptomonnaies avec support multi-devises (CoinMarketCap)
-
-import { CMC_API_KEY } from '@/lib/config'
+// Service de gestion des prix des cryptomonnaies - PRIX RÉELS UNIQUEMENT
+// Actualisation toutes les minutes depuis CoinMarketCap
 
 export interface CryptoPrice {
   id: string
   symbol: string
   name: string
   current_price: number
-  price_change_percentage_24h: number
   market_cap: number
-  image: string
+  price_change_percentage_24h: number
+  last_updated?: string
+  image?: string
+  cmc_rank?: number
+  volume_24h?: number
 }
 
-export type Currency = "CHF" | "EUR" | "USD"
+export type Currency = "USD" | "EUR" | "CHF"
 
 export class CryptoPriceService {
   private static instance: CryptoPriceService
   private cache: Map<string, { data: CryptoPrice[]; timestamp: number }> = new Map()
-  private readonly CACHE_DURATION = 60 * 1000 // 1 minute
+  private ratesCache: { rates: any; timestamp: number } | null = null
+  private readonly CACHE_DURATION = 60 * 1000 // 1 MINUTE SEULEMENT !
+  private readonly RATES_CACHE_DURATION = 60 * 60 * 1000 // 1 heure pour les taux
 
   private constructor() {}
 
@@ -28,96 +32,257 @@ export class CryptoPriceService {
     return CryptoPriceService.instance
   }
 
-  async getCryptoPrices(currency: Currency = "CHF"): Promise<CryptoPrice[]> {
+  async getCryptoPrices(currency: Currency = "USD"): Promise<CryptoPrice[]> {
     const cacheKey = `crypto-prices-${currency}`
     const cached = this.cache.get(cacheKey)
 
+    // Cache très court - 1 minute max
     if (cached && Date.now() - cached.timestamp < this.CACHE_DURATION) {
+      const ageSeconds = Math.floor((Date.now() - cached.timestamp) / 1000)
+      console.log(`📊 Prix en cache (${ageSeconds}s old) - ${currency}`)
       return cached.data
     }
 
     try {
-      const convert = currency
-      const symbols = ['BTC', 'ETH', 'ALGO', 'SOL']
-      const url = `https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?symbol=${symbols.join(',')}&convert=${convert}`
-      const response = await fetch(url, {
+      console.log(`🔥 RÉCUPÉRATION PRIX RÉELS temps réel (${currency})...`)
+
+      // REQUÊTE RÉELLE à notre API sécurisée
+      const response = await fetch('/api/crypto-prices', {
+        method: 'GET',
         headers: {
-          accept: 'application/json',
-          'X-CMC_PRO_API_KEY': CMC_API_KEY,
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
         },
+        cache: 'no-cache' // Forcer refresh
       })
 
       if (!response.ok) {
-        throw new Error(`CMC HTTP ${response.status}`)
+        const errorData = await response.json().catch(() => ({}))
+        console.error('🚨 ERREUR API:', response.status, errorData)
+        throw new Error(`API Error ${response.status}: ${errorData.message || response.statusText}`)
       }
 
       const json = await response.json()
-      const data: CryptoPrice[] = []
-
-      const map: Record<string, { id: string; name: string; image: string }> = {
-        BTC: { id: 'bitcoin', name: 'Bitcoin', image: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1.png' },
-        ETH: { id: 'ethereum', name: 'Ethereum', image: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1027.png' },
-        ALGO: { id: 'algorand', name: 'Algorand', image: 'https://s2.coinmarketcap.com/static/img/coins/64x64/4030.png' },
-        SOL: { id: 'solana', name: 'Solana', image: 'https://s2.coinmarketcap.com/static/img/coins/64x64/5426.png' },
+      
+      if (!json.data || json.data.length === 0) {
+        throw new Error('Aucune donnée crypto reçue')
       }
 
-      for (const sym of symbols) {
-        const entry = json.data?.[sym]
-        const quote = entry?.quote?.[convert]
-        if (entry && quote) {
-          const meta = map[sym]
-          data.push({
-            id: meta.id,
-            symbol: sym,
-            name: meta.name,
-            current_price: quote.price,
-            price_change_percentage_24h: quote.percent_change_24h ?? 0,
-            market_cap: quote.market_cap ?? 0,
-            image: meta.image,
-          })
-        }
+      let data = json.data
+
+      console.log(`✅ ${data.length} prix RÉELS reçus de CoinMarketCap`)
+      console.log(`🔥 BTC: $${data.find(c => c.symbol === 'BTC')?.current_price.toLocaleString('en-US')} USD`)
+      console.log(`💎 Source: ${json.source} - Fresh: ${json.freshData ? 'OUI' : 'NON'}`)
+
+      // Convertir depuis USD vers la devise demandée si nécessaire
+      if (currency !== 'USD') {
+        const rates = await this.getExchangeRates()
+        const conversionRate = rates[currency] || 1
+        
+        data = data.map((crypto: any) => ({
+          ...crypto,
+          current_price: crypto.current_price * conversionRate,
+          market_cap: crypto.market_cap * conversionRate,
+          volume_24h: crypto.volume_24h ? crypto.volume_24h * conversionRate : undefined
+        }))
+        
+        console.log(`🔄 Prix convertis USD -> ${currency} (taux: ${conversionRate})`)
       }
 
-      if (data.length === 0) throw new Error('CMC empty data')
-
+      // Mettre en cache SEULEMENT 1 minute
       this.cache.set(cacheKey, { data, timestamp: Date.now() })
+      console.log(`💾 Prix RÉELS mis en cache pour ${currency} (1 minute)`)
+      
       return data
+
     } catch (error) {
-      console.error('CMC error:', error)
-      return this.getFallbackPrices(currency)
+      console.error('🚨 ERREUR CRITIQUE récupération prix réels:', error)
+      
+      // PAS DE FALLBACK - ÉCHEC SI PAS DE VRAIES DONNÉES !
+      throw new Error(`Impossible de récupérer les prix réels: ${error instanceof Error ? error.message : 'Erreur inconnue'}`)
     }
   }
 
-  private getFallbackPrices(currency: Currency): CryptoPrice[] {
-    const basePrices = [
-      { id: 'bitcoin', symbol: 'BTC', name: 'Bitcoin', current_price: 65000, price_change_percentage_24h: 0, market_cap: 1200000000000, image: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1.png' },
-      { id: 'ethereum', symbol: 'ETH', name: 'Ethereum', current_price: 3200, price_change_percentage_24h: 0, market_cap: 380000000000, image: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1027.png' },
-      { id: 'algorand', symbol: 'ALGO', name: 'Algorand', current_price: 0.25, price_change_percentage_24h: 0, market_cap: 2000000000, image: 'https://s2.coinmarketcap.com/static/img/coins/64x64/4030.png' },
-      { id: 'solana', symbol: 'SOL', name: 'Solana', current_price: 150, price_change_percentage_24h: 0, market_cap: 65000000000, image: 'https://s2.coinmarketcap.com/static/img/coins/64x64/5426.png' },
-    ]
+  private async getExchangeRates(): Promise<Record<Currency, number>> {
+    // Vérifier le cache des taux
+    if (this.ratesCache && Date.now() - this.ratesCache.timestamp < this.RATES_CACHE_DURATION) {
+      return this.ratesCache.rates
+    }
 
-    const exchangeRates = { USD: 1, CHF: 0.91, EUR: 0.85 }
-    const rate = exchangeRates[currency]
+    try {
+      console.log('📡 Récupération taux de change RÉELS...')
+      const response = await fetch('/api/exchange-rates')
+      
+      if (response.ok) {
+        const data = await response.json()
+        const rates = data.rates || { USD: 1, CHF: 0.91, EUR: 0.85 }
+        
+        // Mettre en cache
+        this.ratesCache = {
+          rates,
+          timestamp: Date.now()
+        }
+        
+        console.log('✅ Taux de change RÉELS récupérés:', rates)
+        return rates
+      }
+    } catch (error) {
+      console.warn('⚠️ Erreur récupération taux, utilisation valeurs par défaut:', error)
+    }
 
-    return basePrices.map((crypto) => ({ ...crypto, current_price: crypto.current_price * rate, market_cap: crypto.market_cap * rate }))
+    // Valeurs par défaut minimum
+    const defaultRates = { USD: 1, CHF: 0.91, EUR: 0.85 }
+    this.ratesCache = {
+      rates: defaultRates,
+      timestamp: Date.now()
+    }
+    return defaultRates
   }
 
-  formatPrice(price: number, currency: Currency = 'CHF'): string {
-    const locales = { CHF: 'fr-CH', EUR: 'de-DE', USD: 'en-US' }
-    return new Intl.NumberFormat(locales[currency], { style: 'currency', currency: currency, minimumFractionDigits: price < 1 ? 4 : 2, maximumFractionDigits: price < 1 ? 4 : 2 }).format(price)
+  // Récupérer le prix d'une crypto spécifique
+  async getCryptoPrice(symbol: string, currency: Currency = 'USD'): Promise<number> {
+    try {
+      const prices = await this.getCryptoPrices(currency)
+      const crypto = prices.find(p => p.symbol === symbol.toUpperCase())
+      if (!crypto) {
+        console.warn(`Prix non trouvé pour ${symbol}`)
+        return 0
+      }
+      return crypto.current_price
+    } catch (error) {
+      console.error(`🚨 Erreur récupération prix ${symbol}:`, error)
+      throw error // Propager l'erreur au lieu de retourner 0
+    }
   }
 
-  formatMarketCap(marketCap: number, currency: Currency = 'CHF'): string {
-    const currencySymbol = currency === 'EUR' ? '€' : currency === 'USD' ? '$' : 'CHF'
-    if (marketCap >= 1e12) return `${(marketCap / 1e12).toFixed(2)}T ${currencySymbol}`
-    if (marketCap >= 1e9) return `${(marketCap / 1e9).toFixed(2)}B ${currencySymbol}`
-    if (marketCap >= 1e6) return `${(marketCap / 1e6).toFixed(2)}M ${currencySymbol}`
-    return `${marketCap.toFixed(2)} ${currencySymbol}`
+  // Calculer la valeur d'une quantité de crypto
+  async calculateValue(amount: number, cryptoSymbol: string, targetCurrency: Currency = 'USD'): Promise<number> {
+    if (amount === 0) return 0
+    
+    try {
+      const price = await this.getCryptoPrice(cryptoSymbol, targetCurrency)
+      if (price === 0) {
+        throw new Error(`Prix non disponible pour ${cryptoSymbol}`)
+      }
+      
+      const value = amount * price
+      console.log(`💰 ${amount} ${cryptoSymbol} = ${this.formatPrice(value, targetCurrency)} (prix: ${this.formatPrice(price, targetCurrency)})`)
+      return value
+    } catch (error) {
+      console.error(`🚨 Erreur calcul valeur ${cryptoSymbol}:`, error)
+      throw error // Propager l'erreur
+    }
+  }
+
+  formatPrice(price: number, currency: Currency = 'USD'): string {
+    const locales = { USD: 'en-US', EUR: 'de-DE', CHF: 'fr-CH' }
+    const locale = locales[currency] || 'en-US'
+    
+    try {
+      return new Intl.NumberFormat(locale, {
+        style: 'currency',
+        currency: currency,
+        minimumFractionDigits: price < 1 ? 4 : 2,
+        maximumFractionDigits: price < 1 ? 6 : 2
+      }).format(price)
+    } catch (error) {
+      // Fallback simple
+      const symbol = currency === 'USD' ? '$' : currency === 'EUR' ? '€' : currency + ' '
+      return `${symbol}${price.toFixed(2)}`
+    }
+  }
+
+  formatMarketCap(marketCap: number, currency: Currency = 'USD'): string {
+    const symbol = currency === 'EUR' ? '€' : currency === 'USD' ? '$' : currency + ' '
+    if (marketCap >= 1e12) return `${symbol}${(marketCap / 1e12).toFixed(2)}T`
+    if (marketCap >= 1e9) return `${symbol}${(marketCap / 1e9).toFixed(2)}B`
+    if (marketCap >= 1e6) return `${symbol}${(marketCap / 1e6).toFixed(2)}M`
+    return `${symbol}${marketCap.toLocaleString()}`
   }
 
   getCurrencySymbol(currency: Currency): string {
-    const symbols = { CHF: 'CHF', EUR: '€', USD: '$' }
+    const symbols = { USD: '$', EUR: '€', CHF: 'CHF' }
     return symbols[currency]
+  }
+
+  // Méthode pour vérifier la santé de l'API CoinMarketCap
+  async checkAPIHealth(): Promise<{ healthy: boolean; details: any }> {
+    try {
+      const response = await fetch('/api/crypto-prices', {
+        method: 'GET',
+        headers: { 'Accept': 'application/json' },
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        return {
+          healthy: true,
+          details: {
+            source: data.source,
+            cryptoCount: data.data?.length || 0,
+            lastUpdate: data.lastUpdate,
+            freshData: data.freshData
+          }
+        }
+      } else {
+        const errorData = await response.json().catch(() => ({}))
+        return {
+          healthy: false,
+          details: {
+            status: response.status,
+            error: errorData.message || response.statusText
+          }
+        }
+      }
+    } catch (error) {
+      return {
+        healthy: false,
+        details: {
+          error: error instanceof Error ? error.message : 'Network error'
+        }
+      }
+    }
+  }
+
+  // Nettoyer le cache pour forcer refresh
+  clearCache(): void {
+    this.cache.clear()
+    this.ratesCache = null
+    console.log('🧹 Cache NETTOYÉ - prochaine requête sera fraîche')
+  }
+
+  // Forcer refresh immédiat des prix
+  async forceRefresh(currency: Currency = 'USD'): Promise<CryptoPrice[]> {
+    console.log('⚡ REFRESH FORCÉ des prix depuis CoinMarketCap...')
+    this.clearCache()
+    return await this.getCryptoPrices(currency)
+  }
+
+  // Démarrer auto-refresh toutes les minutes
+  startAutoRefresh(currency: Currency = 'USD', callback?: (prices: CryptoPrice[]) => void): number {
+    console.log('🔄 AUTO-REFRESH démarré - prix mis à jour toutes les minutes')
+    
+    const intervalId = setInterval(async () => {
+      try {
+        console.log('⏰ Auto-refresh des prix (1 minute écoulée)...')
+        const prices = await this.forceRefresh(currency)
+        console.log(`✅ ${prices.length} prix mis à jour automatiquement`)
+        
+        if (callback) {
+          callback(prices)
+        }
+      } catch (error) {
+        console.error('🚨 Erreur auto-refresh:', error)
+      }
+    }, 60 * 1000) // 1 MINUTE !
+
+    return intervalId
+  }
+
+  // Arrêter auto-refresh
+  stopAutoRefresh(intervalId: number): void {
+    clearInterval(intervalId)
+    console.log('⏹️ Auto-refresh arrêté')
   }
 }
 

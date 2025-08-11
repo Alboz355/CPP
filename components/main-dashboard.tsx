@@ -15,6 +15,7 @@ import { CryptoList } from './crypto-list'
 import { RealTimePrices } from './real-time-prices'
 import type { AppState } from '@/app/page'
 import type { UserType } from '@/components/onboarding-page'
+import { toast } from '@/components/ui/use-toast'
 
 interface MainDashboardProps {
   userType: UserType | 'individual' | 'business' | null
@@ -71,25 +72,182 @@ export function MainDashboard({ userType, onNavigate, walletData, onShowMtPeleri
     }
   }, [focusMode])
   
-  // Utiliser les vraies données du wallet
+  // Utiliser les vraies données du wallet avec calcul en temps réel
   const dashboardData = useMemo(() => {
-    const btcBalance = walletData?.balances?.bitcoin || 0
-    const ethBalance = walletData?.balances?.ethereum || 0
-    const algoBalance = walletData?.balances?.algorand || 0
-    const solBalance = walletData?.balances?.solana || 0
-    
-    // Calculer le total en CHF (vous pouvez utiliser les vrais taux de change)
-    const totalBalance = btcBalance + ethBalance + algoBalance + solBalance
+    // Données par défaut
+    let totalBalance = 0
+    let totalBalanceFormatted = '$0.00'
+    let isLoading = true
     
     return {
       totalBalance,
-      monthlyChange: 0, // Sera calculé avec l'historique réel
+      totalBalanceFormatted,
+      isLoading,
+      btcBalance: walletData?.balances?.bitcoin || 0,
+      ethBalance: walletData?.balances?.ethereum || 0,
+      algoBalance: walletData?.balances?.algorand || 0,
+      solBalance: walletData?.balances?.solana || 0,
+      monthlyChange: 0,
       monthlyTransactions: 0,
       monthlyVolume: 0,
       monthlyGoal: 0,
       clientsCount: 0
     }
   }, [walletData])
+
+  // État pour les vraies données calculées
+  const [realTimeBalance, setRealTimeBalance] = useState<{
+    total: number
+    formatted: string
+    breakdown: any
+    lastUpdated?: string
+    isLoading: boolean
+    error?: string
+  }>({
+    total: 0,
+    formatted: '$0.00',
+    breakdown: {},
+    isLoading: true
+  })
+
+  // Charger le solde au montage et refresh périodique TEMPS RÉEL
+  useEffect(() => {
+    // Chargement initial immédiat
+    const timer = setTimeout(() => {
+      fetchRealBalance()
+    }, 500) // Délai réduit pour chargement plus rapide
+
+    // Refresh périodique TOUTES LES MINUTES pour prix temps réel !
+    const interval = setInterval(() => {
+      console.log('⏰ Refresh automatique du solde et prix (1 minute écoulée)...')
+      fetchRealBalance()
+    }, 60 * 1000) // 1 MINUTE !
+
+    return () => {
+      clearTimeout(timer)
+      clearInterval(interval)
+    }
+  }, [fetchRealBalance])
+
+  // AUTO-REFRESH des prix crypto toutes les minutes
+  useEffect(() => {
+    let refreshInterval: number | null = null
+
+    // Démarrer l'auto-refresh des prix
+    const startPriceRefresh = async () => {
+      try {
+        // Import dynamique pour éviter les problèmes SSR
+        const { cryptoService } = await import('@/lib/crypto-prices')
+        
+        refreshInterval = cryptoService.startAutoRefresh('USD', (prices) => {
+          console.log(`🔥 Prix mis à jour automatiquement: BTC $${prices.find(p => p.symbol === 'BTC')?.current_price.toLocaleString('en-US')}`)
+          // Le refresh du solde total se fera via fetchRealBalance
+        })
+        
+        console.log('🔄 Auto-refresh des prix démarré (toutes les minutes)')
+      } catch (error) {
+        console.error('❌ Erreur démarrage auto-refresh:', error)
+      }
+    }
+
+    startPriceRefresh()
+
+    return () => {
+      if (refreshInterval) {
+        clearInterval(refreshInterval)
+        console.log('⏹️ Auto-refresh des prix arrêté')
+      }
+    }
+  }, [])
+
+  // Fonction pour récupérer le vrai solde total AVEC PRIX TEMPS RÉEL
+  const fetchRealBalance = useCallback(async () => {
+    if (!walletData?.addresses) {
+      console.warn('⚠️ Pas d\'adresses disponibles pour calculer le solde')
+      setRealTimeBalance(prev => ({ ...prev, isLoading: false }))
+      return
+    }
+
+    try {
+      console.log('🔄 CALCUL SOLDE TOTAL avec prix TEMPS RÉEL...')
+      setRealTimeBalance(prev => ({ ...prev, isLoading: true, error: undefined }))
+
+      // Forcer refresh des prix avant calcul
+      const { cryptoService } = await import('@/lib/crypto-prices')
+      await cryptoService.clearCache() // Force nouveau fetch
+
+      const response = await fetch('/api/wallet-balance', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          addresses: walletData.addresses,
+          currency: 'USD'
+        }),
+        cache: 'no-cache' // Force nouveau calcul
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(`API Error ${response.status}: ${errorData.message || response.statusText}`)
+      }
+
+      const result = await response.json()
+      
+      if (result.success && result.data) {
+        const { stats, breakdown } = result.data
+        
+        setRealTimeBalance({
+          total: stats.totalValue,
+          formatted: stats.totalValueFormatted,
+          breakdown,
+          lastUpdated: stats.lastUpdated,
+          isLoading: false
+        })
+        
+        console.log(`💎 SOLDE TOTAL CALCULÉ TEMPS RÉEL: ${stats.totalValueFormatted}`)
+        console.log(`🔥 Basé sur prix CoinMarketCap actuels`)
+      } else {
+        throw new Error(result.error || 'Erreur de calcul du solde')
+      }
+    } catch (error) {
+      console.error('🚨 ERREUR calcul solde temps réel:', error)
+      setRealTimeBalance(prev => ({
+        ...prev,
+        isLoading: false,
+        error: `Erreur prix temps réel: ${error instanceof Error ? error.message : 'Erreur inconnue'}`
+      }))
+    }
+  }, [walletData])
+
+  // Fonction de refresh manuel FORCÉ
+  const handleRefreshBalance = useCallback(async () => {
+    console.log('⚡ REFRESH MANUEL FORCÉ!')
+    setIsRefreshing(true)
+    
+    try {
+      // Vider le cache pour forcer de nouvelles données
+      const { cryptoService } = await import('@/lib/crypto-prices')
+      cryptoService.clearCache()
+      
+      await fetchRealBalance()
+      
+      toast({
+        title: "Prix mis à jour !",
+        description: "Données temps réel récupérées depuis CoinMarketCap",
+      })
+    } catch (error) {
+      toast({
+        title: "Erreur refresh",
+        description: "Impossible de récupérer les prix actuels",
+        variant: "destructive"
+      })
+    } finally {
+      // Petit délai pour l'UX
+      setTimeout(() => setIsRefreshing(false), 1000)
+    }
+  }, [fetchRealBalance])
 
   interface Transaction {
     id: string
@@ -125,10 +283,10 @@ export function MainDashboard({ userType, onNavigate, walletData, onShowMtPeleri
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true)
-    // Simulate refresh
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    setIsRefreshing(false)
-  }, [])
+    await fetchRealBalance()
+    // Petit délai pour l'UX
+    setTimeout(() => setIsRefreshing(false), 1000)
+  }, [fetchRealBalance])
 
   const formatTimeAgo = useCallback((date: Date) => {
     const now = new Date()
@@ -244,26 +402,50 @@ export function MainDashboard({ userType, onNavigate, walletData, onShowMtPeleri
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-[#8E8E93] mb-2 text-sm font-medium" id="balance-title">{t.dashboard.totalBalance}</p>
-                  <p className={`text-4xl font-bold balance-display ${dashboardData.totalBalance === 0 ? 'balance-zero' : 'balance-positive'} ${focusMode ? 'sensitive-data' : ''}`} 
-                     aria-live="polite">
-                    CHF {dashboardData.totalBalance === 0 ? '0' : dashboardData.totalBalance.toLocaleString('fr-CH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </p>
+                  {realTimeBalance.isLoading ? (
+                    <div className="flex items-center gap-3">
+                      <Loader2 className="h-6 w-6 animate-spin text-[#007AFF]" aria-hidden="true" />
+                      <span className="text-2xl font-medium text-[#8E8E93]">Calcul en cours...</span>
+                    </div>
+                  ) : realTimeBalance.error ? (
+                    <div className="flex flex-col gap-2">
+                      <p className="text-2xl font-medium text-[#FF3B30]">Erreur calcul</p>
+                      <p className="text-xs text-[#8E8E93]">{realTimeBalance.error}</p>
+                    </div>
+                  ) : (
+                    <p className={`text-4xl font-bold balance-display ${realTimeBalance.total > 0 ? 'balance-positive' : 'balance-zero'} ${focusMode ? 'sensitive-data' : ''}`} 
+                       aria-live="polite">
+                      {realTimeBalance.formatted}
+                    </p>
+                  )}
                   <div className="flex items-center gap-2 mt-3" role="status" aria-live="polite">
-                    {dashboardData.monthlyChange >= 0 ? (
-                      <TrendingUp className="h-4 w-4 text-[#34C759]" aria-hidden="true" />
-                    ) : (
-                      <TrendingDown className="h-4 w-4 text-[#FF3B30]" aria-hidden="true" />
-                    )}
+                    <TrendingUp className="h-4 w-4 text-[#8E8E93]" aria-hidden="true" />
                     <span className="text-sm text-[#8E8E93] font-medium">
-                      {dashboardData.monthlyChange >= 0 ? '+' : ''}{dashboardData.monthlyChange}% {t.time.thisMonth}
+                      {realTimeBalance.lastUpdated ? 
+                        `Mis à jour: ${new Date(realTimeBalance.lastUpdated).toLocaleTimeString('fr-CH', { hour: '2-digit', minute: '2-digit' })}` :
+                        '0.00% ' + t.time.thisMonth
+                      }
                     </span>
                   </div>
                 </div>
-                <div className="text-right">
+                <div className="text-center">
                   <Avatar className="h-16 w-16 mb-2 border-2 border-[#E5E5EA] dark:border-[#38383A]">
-                    <AvatarImage src="/placeholder-user.jpg" alt="Photo de profil utilisateur" />
+                    <AvatarImage src="/placeholder-logo.png" alt="CryptoWallet" />
                     <AvatarFallback className="bg-[#F2F2F7] dark:bg-[#2C2C2E] text-[#000000] dark:text-[#FFFFFF] font-semibold">CW</AvatarFallback>
                   </Avatar>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={handleRefreshBalance}
+                    disabled={isRefreshing || realTimeBalance.isLoading}
+                    className="text-[#007AFF] hover:bg-[#F2F2F7] dark:hover:bg-[#2C2C2E] rounded-xl flex items-center gap-2"
+                  >
+                    {isRefreshing || realTimeBalance.isLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <span className="text-xs">Actualiser</span>
+                    )}
+                  </Button>
                 </div>
               </div>
             </CardContent>
@@ -331,7 +513,7 @@ export function MainDashboard({ userType, onNavigate, walletData, onShowMtPeleri
                   </div>
                   <div>
                     <p className="text-sm text-[#8E8E93]">{t.dashboard.statistics.volumeExchanged}</p>
-                    <p className="text-2xl font-bold text-[#000000] dark:text-[#FFFFFF]">CHF {dashboardData.monthlyVolume.toLocaleString('fr-CH')}</p>
+                    <p className="text-2xl font-bold text-[#000000] dark:text-[#FFFFFF]">CHF 0</p>
                   </div>
                 </div>
               </CardContent>
