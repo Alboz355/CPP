@@ -4,7 +4,7 @@ import { CMC_API_KEY } from '@/lib/config'
 // Rate limiting
 const rateLimit = new Map<string, { count: number; resetTime: number }>()
 const RATE_LIMIT_WINDOW = 60 * 1000 // 1 minute
-const MAX_REQUESTS_PER_WINDOW = 10
+const MAX_REQUESTS_PER_WINDOW = 20 // Plus de requêtes pour refresh fréquent
 
 function checkRateLimit(ip: string): boolean {
   const now = Date.now()
@@ -41,36 +41,56 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 })
     }
 
-    // Vérifier que la clé API est configurée
-    if (!CMC_API_KEY) {
-      console.error('CMC_API_KEY non configurée')
-      return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
+    // VÉRIFICATION OBLIGATOIRE DE LA CLÉ API
+    if (!CMC_API_KEY || CMC_API_KEY === 'your-coinmarketcap-api-key') {
+      console.error('🚨 CMC_API_KEY non configurée ou invalide!')
+      return NextResponse.json({ 
+        error: 'API Key not configured',
+        message: 'Veuillez configurer votre clé CoinMarketCap'
+      }, { status: 503 })
     }
 
-    console.log('🚀 Récupération prix cryptos RÉELS en USD depuis CoinMarketCap...')
+    console.log('🔥 RÉCUPÉRATION PRIX RÉELS depuis CoinMarketCap avec clé:', CMC_API_KEY.substring(0, 8) + '...')
 
-    // Récupérer les données RÉELLES depuis CoinMarketCap en USD (prix actuels)
+    // REQUÊTE RÉELLE À COINMARKETCAP - AUCUNE SIMULATION !
     const symbols = ['BTC', 'ETH', 'ALGO', 'SOL', 'USDC']
-    const response = await fetch(
-      `https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?symbol=${symbols.join(',')}&convert=USD`,
-      {
-        headers: {
-          'X-CMC_PRO_API_KEY': CMC_API_KEY,
-          'Accept': 'application/json',
-        },
-        next: { revalidate: 300 } // Cache pendant 5 minutes
-      }
-    )
+    const cmcUrl = `https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?symbol=${symbols.join(',')}&convert=USD`
+    
+    console.log('📡 Requête CMC:', cmcUrl)
+    
+    const response = await fetch(cmcUrl, {
+      headers: {
+        'X-CMC_PRO_API_KEY': CMC_API_KEY,
+        'Accept': 'application/json',
+      },
+      next: { revalidate: 60 } // Cache 1 MINUTE seulement !
+    })
 
     if (!response.ok) {
-      console.error('Erreur CoinMarketCap:', response.status, response.statusText)
-      throw new Error(`CoinMarketCap API error: ${response.status}`)
+      const errorText = await response.text()
+      console.error('🚨 ERREUR CoinMarketCap:', response.status, response.statusText)
+      console.error('🚨 Détails erreur:', errorText)
+      
+      // EN CAS D'ERREUR CMC, STOPPER IMMÉDIATEMENT - PAS DE FALLBACK !
+      return NextResponse.json({ 
+        error: `CoinMarketCap API error: ${response.status}`,
+        details: process.env.NODE_ENV === 'development' ? errorText : 'API unavailable',
+        timestamp: Date.now()
+      }, { status: 503 })
     }
 
     const data = await response.json()
-    console.log('✅ Données reçues de CoinMarketCap:', data.data ? Object.keys(data.data) : 'No data')
+    console.log('✅ DONNÉES RÉELLES reçues de CoinMarketCap!')
+    
+    if (!data.data) {
+      console.error('🚨 Aucune donnée dans la réponse CMC!')
+      return NextResponse.json({ 
+        error: 'No data received from CoinMarketCap',
+        timestamp: Date.now()
+      }, { status: 503 })
+    }
 
-    // Mapping des symboles vers les infos complètes avec USDC
+    // Mapping des symboles avec vraies images CMC
     const cryptoInfo = {
       'BTC': { id: 'bitcoin', name: 'Bitcoin', image: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1.png' },
       'ETH': { id: 'ethereum', name: 'Ethereum', image: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1027.png' },
@@ -79,13 +99,13 @@ export async function GET(request: NextRequest) {
       'USDC': { id: 'usd-coin', name: 'USD Coin', image: 'https://s2.coinmarketcap.com/static/img/coins/64x64/3408.png' }
     }
 
-    // Transformer les données CoinMarketCap en format attendu
-    const filteredData = symbols.map(symbol => {
+    // Transformer les VRAIES données CoinMarketCap
+    const realData = symbols.map(symbol => {
       const coinData = data.data[symbol]
       const info = cryptoInfo[symbol as keyof typeof cryptoInfo]
       
       if (!coinData || !coinData.quote?.USD) {
-        console.warn(`Données manquantes pour ${symbol}`)
+        console.warn(`⚠️ Données manquantes pour ${symbol} - IGNORÉ`)
         return null
       }
 
@@ -99,20 +119,30 @@ export async function GET(request: NextRequest) {
         market_cap: quote.market_cap,
         price_change_percentage_24h: quote.percent_change_24h,
         last_updated: coinData.last_updated,
-        image: info.image
+        image: info.image,
+        cmc_rank: coinData.cmc_rank,
+        volume_24h: quote.volume_24h
       }
       
-      console.log(`💰 ${symbol}: $${quote.price.toFixed(2)} USD`)
+      console.log(`💎 ${symbol}: $${quote.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 6 })} USD (${quote.percent_change_24h > 0 ? '📈' : '📉'} ${quote.percent_change_24h.toFixed(2)}%)`)
       return result
     }).filter(Boolean) // Supprimer les valeurs null
 
-    console.log(`✅ ${filteredData.length} cryptomonnaies traitées avec succès`)
-    console.log(`🔥 BTC actuel: $${data.data?.BTC?.quote?.USD?.price?.toFixed(2) || 'N/A'} USD`)
+    if (realData.length === 0) {
+      console.error('🚨 AUCUNE donnée cryptos valide reçue!')
+      return NextResponse.json({ 
+        error: 'No valid crypto data received from CoinMarketCap',
+        timestamp: Date.now()
+      }, { status: 503 })
+    }
 
-    // Headers de sécurité
+    console.log(`🔥 ${realData.length} cryptomonnaies RÉELLES traitées avec succès!`)
+    console.log(`💰 BTC ACTUEL: $${data.data?.BTC?.quote?.USD?.price?.toLocaleString('en-US') || 'N/A'} USD`)
+
+    // Headers avec cache très court (1 minute)
     const headers = new Headers({
       'Content-Type': 'application/json',
-      'Cache-Control': 'public, max-age=300, stale-while-revalidate=60', // 5 minutes cache
+      'Cache-Control': 'public, max-age=60, stale-while-revalidate=30', // 1 MINUTE CACHE !
       'X-Content-Type-Options': 'nosniff',
       'X-Frame-Options': 'DENY',
       'X-XSS-Protection': '1; mode=block'
@@ -123,33 +153,25 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({ 
-      data: filteredData,
+      data: realData,
       timestamp: Date.now(),
-      source: 'coinmarketcap',
-      currency: 'USD', // Prix en USD par défaut !
-      lastUpdate: new Date().toISOString()
+      source: 'coinmarketcap-live',
+      currency: 'USD',
+      lastUpdate: new Date().toISOString(),
+      freshData: true, // Indiquer que ce sont des données fraîches
+      cacheInfo: 'Cache 1 minute - données temps réel'
     }, { headers })
 
   } catch (error) {
-    console.error('❌ Erreur API crypto-prices:', error)
+    console.error('🚨 ERREUR CRITIQUE API crypto-prices:', error)
     
-    // En cas d'erreur, retourner des données de fallback avec VRAIS prix approximatifs actuels
-    const fallbackData = [
-      { id: 'bitcoin', symbol: 'BTC', name: 'Bitcoin', current_price: 105000, market_cap: 2070000000000, price_change_percentage_24h: 2.1, image: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1.png' },
-      { id: 'ethereum', symbol: 'ETH', name: 'Ethereum', current_price: 4100, market_cap: 493000000000, price_change_percentage_24h: 1.8, image: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1027.png' },
-      { id: 'algorand', symbol: 'ALGO', name: 'Algorand', current_price: 0.38, market_cap: 3100000000, price_change_percentage_24h: -0.5, image: 'https://s2.coinmarketcap.com/static/img/coins/64x64/4030.png' },
-      { id: 'solana', symbol: 'SOL', name: 'Solana', current_price: 220, market_cap: 105000000000, price_change_percentage_24h: 3.2, image: 'https://s2.coinmarketcap.com/static/img/coins/64x64/5426.png' },
-      { id: 'usd-coin', symbol: 'USDC', name: 'USD Coin', current_price: 1.0, market_cap: 78000000000, price_change_percentage_24h: 0.01, image: 'https://s2.coinmarketcap.com/static/img/coins/64x64/3408.png' }
-    ]
-
+    // EN CAS D'ERREUR RÉSEAU, RETOURNER UNE ERREUR - PAS DE SIMULATION !
     return NextResponse.json({ 
-      data: fallbackData,
+      error: 'CoinMarketCap API unavailable',
+      message: 'Impossible de récupérer les prix réels. Vérifiez votre connexion et votre clé API.',
       timestamp: Date.now(),
-      source: 'fallback-updated-prices',
-      currency: 'USD',
-      lastUpdate: new Date().toISOString(),
-      error: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.message : 'Unknown error') : 'Service temporarily unavailable'
-    }, { status: 200 }) // Status 200 pour ne pas casser l'UX
+      apiError: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.message : 'Unknown error') : 'Service unavailable'
+    }, { status: 503 })
   }
 }
 

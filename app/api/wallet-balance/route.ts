@@ -66,23 +66,26 @@ export async function POST(request: NextRequest) {
 
     console.log('📊 Prix récupérés:', prices)
 
-    // Récupérer les soldes pour chaque crypto
+    // Récupérer les soldes pour chaque crypto AVEC USDC
     const balancePromises = []
     const cryptoNetworks = {
       bitcoin: 'bitcoin',
-      ethereum: 'ethereum', 
+      ethereum: 'ethereum',
       algorand: 'algorand',
-      solana: 'solana'
+      solana: 'solana',
+      usdc: 'usdc' // Ajout USDC support
     }
 
-    // Paralléliser les requêtes de solde
+    // Paralléliser les requêtes de solde TEMPS RÉEL
     for (const [cryptoType, address] of Object.entries(addresses)) {
       if (address && cryptoNetworks[cryptoType as keyof typeof cryptoNetworks]) {
         const network = cryptoNetworks[cryptoType as keyof typeof cryptoNetworks]
-        console.log(`🔍 Requête solde ${network}: ${address}`)
-        
+        console.log(`🔍 Requête solde TEMPS RÉEL ${network}: ${address}`)
+
         balancePromises.push(
-          fetch(`${request.nextUrl.origin}/api/blockchain?network=${network}&address=${address}`)
+          fetch(`${request.nextUrl.origin}/api/blockchain?network=${network}&address=${address}`, {
+            cache: 'no-cache' // Force nouvelles données blockchain
+          })
             .then(res => res.json())
             .then(data => ({
               crypto: cryptoType,
@@ -90,7 +93,8 @@ export async function POST(request: NextRequest) {
               address,
               balance: parseFloat(data.balance || '0'),
               error: data.error || null,
-              additionalInfo: data.additionalInfo || {}
+              additionalInfo: data.additionalInfo || {},
+              source: data.source
             }))
             .catch(error => ({
               crypto: cryptoType,
@@ -98,31 +102,33 @@ export async function POST(request: NextRequest) {
               address,
               balance: 0,
               error: error.message,
-              additionalInfo: {}
+              additionalInfo: {},
+              source: 'error'
             }))
         )
       }
     }
 
-    // Attendre toutes les réponses
+    // Attendre toutes les réponses blockchain
     const balanceResults = await Promise.all(balancePromises)
-    console.log('📈 Résultats soldes:', balanceResults)
+    console.log('📈 Résultats soldes TEMPS RÉEL:', balanceResults.map(r => `${r.crypto}: ${r.balance}`))
 
-    // Calculer les valeurs en devise cible
+    // Calculer les valeurs en devise cible avec PRIX TEMPS RÉEL
     let totalValue = 0
     const breakdown: any = {}
-    
+
     for (const result of balanceResults) {
       const { crypto, balance, error } = result
-      const cryptoSymbol = crypto === 'bitcoin' ? 'BTC' : 
+      const cryptoSymbol = crypto === 'bitcoin' ? 'BTC' :
                           crypto === 'ethereum' ? 'ETH' :
                           crypto === 'algorand' ? 'ALGO' :
-                          crypto === 'solana' ? 'SOL' : crypto.toUpperCase()
-      
+                          crypto === 'solana' ? 'SOL' :
+                          crypto === 'usdc' ? 'USDC' : crypto.toUpperCase()
+
       const price = prices[cryptoSymbol] || 0
       const value = balance * price
       totalValue += value
-      
+
       breakdown[crypto] = {
         balance,
         balanceFormatted: `${balance} ${cryptoSymbol}`,
@@ -133,28 +139,33 @@ export async function POST(request: NextRequest) {
         error,
         symbol: cryptoSymbol,
         address: result.address,
-        additionalInfo: result.additionalInfo
+        additionalInfo: result.additionalInfo,
+        source: result.source
       }
-      
-      console.log(`💎 ${cryptoSymbol}: ${balance} × ${price} = ${formatCurrency(value, currency)}`)
+
+      if (balance > 0) {
+        console.log(`💎 ${cryptoSymbol}: ${balance} × ${formatCurrency(price, currency)} = ${formatCurrency(value, currency)} (TEMPS RÉEL)`)
+      }
     }
 
-    // Calculer les statistiques
+    // Calculer les statistiques avec source temps réel
     const stats = {
       totalCryptos: balanceResults.length,
       cryptosWithBalance: balanceResults.filter(r => r.balance > 0).length,
       totalValue,
       totalValueFormatted: formatCurrency(totalValue, currency),
       currency,
-      lastUpdated: new Date().toISOString()
+      lastUpdated: new Date().toISOString(),
+      dataSource: 'live-realtime', // Indiquer que c'est temps réel
+      priceSource: pricesData.source
     }
 
-    console.log(`💰 Total: ${formatCurrency(totalValue, currency)}`)
+    console.log(`🔥 TOTAL TEMPS RÉEL: ${formatCurrency(totalValue, currency)} (${stats.cryptosWithBalance}/${stats.totalCryptos} cryptos actives)`)
 
-    // Headers de réponse
+    // Headers de réponse avec cache court
     const headers = new Headers({
       'Content-Type': 'application/json',
-      'Cache-Control': 'public, max-age=60, stale-while-revalidate=30', // 1 min cache
+      'Cache-Control': 'public, max-age=60, stale-while-revalidate=30', // 1 MINUTE cache
       'X-Content-Type-Options': 'nosniff',
       'X-Frame-Options': 'DENY',
       'X-XSS-Protection': '1; mode=block'
@@ -171,7 +182,7 @@ export async function POST(request: NextRequest) {
         breakdown,
         balances: balanceResults,
         timestamp: Date.now(),
-        source: 'live-blockchain-calculation'
+        source: 'live-blockchain-calculation-realtime'
       }
     }, { headers })
 

@@ -15,6 +15,7 @@ import { CryptoList } from './crypto-list'
 import { RealTimePrices } from './real-time-prices'
 import type { AppState } from '@/app/page'
 import type { UserType } from '@/components/onboarding-page'
+import { toast } from '@/components/ui/use-toast'
 
 interface MainDashboardProps {
   userType: UserType | 'individual' | 'business' | null
@@ -109,7 +110,57 @@ export function MainDashboard({ userType, onNavigate, walletData, onShowMtPeleri
     isLoading: true
   })
 
-  // Fonction pour récupérer le vrai solde total
+  // Charger le solde au montage et refresh périodique TEMPS RÉEL
+  useEffect(() => {
+    // Chargement initial immédiat
+    const timer = setTimeout(() => {
+      fetchRealBalance()
+    }, 500) // Délai réduit pour chargement plus rapide
+
+    // Refresh périodique TOUTES LES MINUTES pour prix temps réel !
+    const interval = setInterval(() => {
+      console.log('⏰ Refresh automatique du solde et prix (1 minute écoulée)...')
+      fetchRealBalance()
+    }, 60 * 1000) // 1 MINUTE !
+
+    return () => {
+      clearTimeout(timer)
+      clearInterval(interval)
+    }
+  }, [fetchRealBalance])
+
+  // AUTO-REFRESH des prix crypto toutes les minutes
+  useEffect(() => {
+    let refreshInterval: number | null = null
+
+    // Démarrer l'auto-refresh des prix
+    const startPriceRefresh = async () => {
+      try {
+        // Import dynamique pour éviter les problèmes SSR
+        const { cryptoService } = await import('@/lib/crypto-prices')
+        
+        refreshInterval = cryptoService.startAutoRefresh('USD', (prices) => {
+          console.log(`🔥 Prix mis à jour automatiquement: BTC $${prices.find(p => p.symbol === 'BTC')?.current_price.toLocaleString('en-US')}`)
+          // Le refresh du solde total se fera via fetchRealBalance
+        })
+        
+        console.log('🔄 Auto-refresh des prix démarré (toutes les minutes)')
+      } catch (error) {
+        console.error('❌ Erreur démarrage auto-refresh:', error)
+      }
+    }
+
+    startPriceRefresh()
+
+    return () => {
+      if (refreshInterval) {
+        clearInterval(refreshInterval)
+        console.log('⏹️ Auto-refresh des prix arrêté')
+      }
+    }
+  }, [])
+
+  // Fonction pour récupérer le vrai solde total AVEC PRIX TEMPS RÉEL
   const fetchRealBalance = useCallback(async () => {
     if (!walletData?.addresses) {
       console.warn('⚠️ Pas d\'adresses disponibles pour calculer le solde')
@@ -118,8 +169,12 @@ export function MainDashboard({ userType, onNavigate, walletData, onShowMtPeleri
     }
 
     try {
-      console.log('🔄 Récupération solde total en temps réel...')
+      console.log('🔄 CALCUL SOLDE TOTAL avec prix TEMPS RÉEL...')
       setRealTimeBalance(prev => ({ ...prev, isLoading: true, error: undefined }))
+
+      // Forcer refresh des prix avant calcul
+      const { cryptoService } = await import('@/lib/crypto-prices')
+      await cryptoService.clearCache() // Force nouveau fetch
 
       const response = await fetch('/api/wallet-balance', {
         method: 'POST',
@@ -129,11 +184,13 @@ export function MainDashboard({ userType, onNavigate, walletData, onShowMtPeleri
         body: JSON.stringify({
           addresses: walletData.addresses,
           currency: 'USD'
-        })
+        }),
+        cache: 'no-cache' // Force nouveau calcul
       })
 
       if (!response.ok) {
-        throw new Error(`Erreur API: ${response.status}`)
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(`API Error ${response.status}: ${errorData.message || response.statusText}`)
       }
 
       const result = await response.json()
@@ -149,42 +206,47 @@ export function MainDashboard({ userType, onNavigate, walletData, onShowMtPeleri
           isLoading: false
         })
         
-        console.log(`✅ Solde total calculé: ${stats.totalValueFormatted}`)
+        console.log(`💎 SOLDE TOTAL CALCULÉ TEMPS RÉEL: ${stats.totalValueFormatted}`)
+        console.log(`🔥 Basé sur prix CoinMarketCap actuels`)
       } else {
         throw new Error(result.error || 'Erreur de calcul du solde')
       }
     } catch (error) {
-      console.error('❌ Erreur calcul solde:', error)
+      console.error('🚨 ERREUR calcul solde temps réel:', error)
       setRealTimeBalance(prev => ({
         ...prev,
         isLoading: false,
-        error: error instanceof Error ? error.message : 'Erreur inconnue'
+        error: `Erreur prix temps réel: ${error instanceof Error ? error.message : 'Erreur inconnue'}`
       }))
     }
   }, [walletData])
 
-  // Charger le solde au montage et refresh périodique
-  useEffect(() => {
-    // Chargement initial avec délai pour éviter le spam
-    const timer = setTimeout(() => {
-      fetchRealBalance()
-    }, 1000)
-
-    // Refresh périodique (toutes les 2 minutes)
-    const interval = setInterval(fetchRealBalance, 2 * 60 * 1000)
-
-    return () => {
-      clearTimeout(timer)
-      clearInterval(interval)
-    }
-  }, [fetchRealBalance])
-
-  // Fonction de refresh manuel
+  // Fonction de refresh manuel FORCÉ
   const handleRefreshBalance = useCallback(async () => {
+    console.log('⚡ REFRESH MANUEL FORCÉ!')
     setIsRefreshing(true)
-    await fetchRealBalance()
-    // Petit délai pour l'UX
-    setTimeout(() => setIsRefreshing(false), 1000)
+    
+    try {
+      // Vider le cache pour forcer de nouvelles données
+      const { cryptoService } = await import('@/lib/crypto-prices')
+      cryptoService.clearCache()
+      
+      await fetchRealBalance()
+      
+      toast({
+        title: "Prix mis à jour !",
+        description: "Données temps réel récupérées depuis CoinMarketCap",
+      })
+    } catch (error) {
+      toast({
+        title: "Erreur refresh",
+        description: "Impossible de récupérer les prix actuels",
+        variant: "destructive"
+      })
+    } finally {
+      // Petit délai pour l'UX
+      setTimeout(() => setIsRefreshing(false), 1000)
+    }
   }, [fetchRealBalance])
 
   interface Transaction {

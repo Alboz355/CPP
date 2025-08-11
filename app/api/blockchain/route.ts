@@ -67,13 +67,13 @@ export async function GET(request: NextRequest) {
           if (!BLOCKCYPHER_TOKEN) {
             throw new Error('Bitcoin API not configured')
           }
-          
-          console.log('📡 Requête Bitcoin via BlockCypher...')
+
+          console.log('📡 Requête Bitcoin via BlockCypher (TEMPS RÉEL)...')
           const btcResponse = await fetch(
             `https://api.blockcypher.com/v1/btc/main/addrs/${address}/balance?token=${BLOCKCYPHER_TOKEN}`,
-            { next: { revalidate: 60 } }
+            { next: { revalidate: 60 } } // 1 minute cache
           )
-          
+
           if (btcResponse.ok) {
             const btcData = await btcResponse.json()
             balance = (btcData.balance / 100000000).toString() // Satoshis vers BTC
@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
               nTx: btcData.n_tx,
               unconfirmedBalance: (btcData.unconfirmed_balance / 100000000).toString()
             }
-            console.log(`✅ Bitcoin: ${balance} BTC (${btcData.n_tx} transactions)`)
+            console.log(`✅ Bitcoin TEMPS RÉEL: ${balance} BTC (${btcData.n_tx} transactions)`)
           }
           break
 
@@ -91,8 +91,8 @@ export async function GET(request: NextRequest) {
           if (!INFURA_PROJECT_ID) {
             throw new Error('Ethereum API not configured')
           }
-          
-          console.log('📡 Requête Ethereum via Infura...')
+
+          console.log('📡 Requête Ethereum via Infura (TEMPS RÉEL)...')
           const ethResponse = await fetch(
             `https://mainnet.infura.io/v3/${INFURA_PROJECT_ID}`,
             {
@@ -104,17 +104,17 @@ export async function GET(request: NextRequest) {
                 params: [address, 'latest'],
                 id: 1
               }),
-              next: { revalidate: 60 }
+              next: { revalidate: 60 } // 1 minute cache
             }
           )
-          
+
           if (ethResponse.ok) {
             const ethData = await ethResponse.json()
             if (ethData.result) {
               const balanceWei = parseInt(ethData.result, 16)
               balance = (balanceWei / Math.pow(10, 18)).toString() // Wei vers ETH
-              console.log(`✅ Ethereum: ${balance} ETH`)
-              
+              console.log(`✅ Ethereum TEMPS RÉEL: ${balance} ETH`)
+
               // Récupérer le nombre de transactions
               const txCountResponse = await fetch(
                 `https://mainnet.infura.io/v3/${INFURA_PROJECT_ID}`,
@@ -129,7 +129,7 @@ export async function GET(request: NextRequest) {
                   })
                 }
               )
-              
+
               if (txCountResponse.ok) {
                 const txCountData = await txCountResponse.json()
                 additionalInfo.nTx = parseInt(txCountData.result, 16)
@@ -138,16 +138,61 @@ export async function GET(request: NextRequest) {
           }
           break
 
-        case 'algorand':
-          console.log('📡 Requête Algorand via Nodely...')
-          const algoResponse = await fetch(
-            `${ALGORAND_API_BASE}/v2/accounts/${address}`,
-            { 
-              headers: { 'Accept': 'application/json' },
-              next: { revalidate: 60 } 
+        case 'usdc':
+          // USDC est un token ERC-20 sur Ethereum
+          if (!INFURA_PROJECT_ID) {
+            throw new Error('USDC API not configured (needs Ethereum)')
+          }
+
+          console.log('📡 Requête USDC (ERC-20) via Infura (TEMPS RÉEL)...')
+          
+          // Adresse du contrat USDC sur Ethereum Mainnet
+          const USDC_CONTRACT = '0xA0b86a33E6411B4CE17C8DCE8e80c8e533C7E2C1' // USDC mainnet
+          
+          // Appel ERC-20 balanceOf
+          const usdcResponse = await fetch(
+            `https://mainnet.infura.io/v3/${INFURA_PROJECT_ID}`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                jsonrpc: '2.0',
+                method: 'eth_call',
+                params: [{
+                  to: USDC_CONTRACT,
+                  data: `0x70a08231000000000000000000000000${address.slice(2)}` // balanceOf(address)
+                }, 'latest'],
+                id: 1
+              }),
+              next: { revalidate: 60 } // 1 minute cache
             }
           )
-          
+
+          if (usdcResponse.ok) {
+            const usdcData = await usdcResponse.json()
+            if (usdcData.result) {
+              const balanceRaw = parseInt(usdcData.result, 16)
+              balance = (balanceRaw / Math.pow(10, 6)).toString() // USDC a 6 décimales
+              additionalInfo = {
+                contract: USDC_CONTRACT,
+                decimals: 6,
+                tokenType: 'ERC-20'
+              }
+              console.log(`✅ USDC TEMPS RÉEL: ${balance} USDC`)
+            }
+          }
+          break
+
+        case 'algorand':
+          console.log('📡 Requête Algorand via Nodely (TEMPS RÉEL)...')
+          const algoResponse = await fetch(
+            `${ALGORAND_API_BASE}/v2/accounts/${address}`,
+            {
+              headers: { 'Accept': 'application/json' },
+              next: { revalidate: 60 } // 1 minute cache
+            }
+          )
+
           if (algoResponse.ok) {
             const algoData = await algoResponse.json()
             balance = (algoData.amount / 1000000).toString() // microAlgos vers ALGO
@@ -157,12 +202,12 @@ export async function GET(request: NextRequest) {
               round: algoData.round,
               status: algoData.status
             }
-            console.log(`✅ Algorand: ${balance} ALGO (Round: ${algoData.round})`)
+            console.log(`✅ Algorand TEMPS RÉEL: ${balance} ALGO (Round: ${algoData.round})`)
           }
           break
 
         case 'solana':
-          console.log('📡 Requête Solana via Syndica...')
+          console.log('📡 Requête Solana via Syndica (TEMPS RÉEL)...')
           const solResponse = await fetch(
             SOLANA_HTTP_URL,
             {
@@ -174,10 +219,10 @@ export async function GET(request: NextRequest) {
                 method: 'getBalance',
                 params: [address]
               }),
-              next: { revalidate: 60 }
+              next: { revalidate: 60 } // 1 minute cache
             }
           )
-          
+
           if (solResponse.ok) {
             const solData = await solResponse.json()
             if (solData.result && solData.result.value !== undefined) {
@@ -186,7 +231,7 @@ export async function GET(request: NextRequest) {
                 context: solData.result.context,
                 lamports: solData.result.value
               }
-              console.log(`✅ Solana: ${balance} SOL`)
+              console.log(`✅ Solana TEMPS RÉEL: ${balance} SOL`)
             }
           }
           break
@@ -195,18 +240,18 @@ export async function GET(request: NextRequest) {
           return NextResponse.json({ error: 'Unsupported network' }, { status: 400 })
       }
     } catch (apiError) {
-      console.error(`❌ API error for ${network}:`, apiError)
+      console.error(`🚨 Erreur API ${network} (TEMPS RÉEL):`, apiError)
       // En cas d'erreur API, retourner 0 plutôt qu'une erreur pour ne pas casser l'UX
       balance = '0'
-      additionalInfo.error = process.env.NODE_ENV === 'development' ? 
-        (apiError instanceof Error ? apiError.message : 'Unknown API error') : 
+      additionalInfo.error = process.env.NODE_ENV === 'development' ?
+        (apiError instanceof Error ? apiError.message : 'Unknown API error') :
         'Temporary API issue'
     }
 
-    // Headers de sécurité
+    // Headers de sécurité avec cache court
     const headers = new Headers({
       'Content-Type': 'application/json',
-      'Cache-Control': 'public, max-age=60, stale-while-revalidate=30',
+      'Cache-Control': 'public, max-age=60, stale-while-revalidate=30', // 1 MINUTE cache
       'X-Content-Type-Options': 'nosniff',
       'X-Frame-Options': 'DENY',
       'X-XSS-Protection': '1; mode=block'
@@ -223,10 +268,10 @@ export async function GET(request: NextRequest) {
       transactions,
       additionalInfo,
       timestamp: Date.now(),
-      source: 'live-blockchain'
+      source: 'live-blockchain-realtime'
     }
 
-    console.log(`📊 Réponse ${network}: balance=${balance}`)
+    console.log(`📊 Réponse ${network} TEMPS RÉEL: balance=${balance}`)
 
     return NextResponse.json(response, { headers })
 
