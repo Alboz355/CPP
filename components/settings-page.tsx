@@ -61,7 +61,7 @@ export function SettingsPage({
     security: true,
     marketing: false,
   })
-  const [currency, setCurrency] = useState("CHF")
+  const [currency, setCurrency] = useState("USD")
   const [biometrics, setBiometrics] = useState(false)
   const [autoLock, setAutoLock] = useState("5")
   const [pageTransitions, setPageTransitions] = useState(true)
@@ -413,6 +413,68 @@ export function SettingsPage({
                       checked={securitySettings.autoThemeEnabled}
                       onCheckedChange={(checked) => handleSecuritySettingsChange({ autoThemeEnabled: checked })}
                     />
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Devise */}
+              <Card className="apple-card">
+                <CardHeader className="apple-card-header">
+                  <CardTitle className="apple-card-title text-center">
+                    <div className="p-2 bg-[#F2F2F7] dark:bg-[#2C2C2E] rounded-lg">
+                      <DollarSign className="h-5 w-5 text-[#007AFF]" />
+                    </div>
+                    Devise
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="apple-card-content">
+                  <div className="flex items-center justify-between py-3">
+                    <div className="flex-1">
+                      <Label className="text-base font-medium text-[#000000] dark:text-[#FFFFFF]">Devise principale</Label>
+                      <p className="text-sm text-[#8E8E93] mt-1">Affichage des prix et montants</p>
+                    </div>
+                    <Select value={currency} onValueChange={(value) => {
+                      setCurrency(value)
+                      localStorage.setItem("currency", value)
+                      saveSettings()
+                      toast({
+                        title: "Devise mise à jour",
+                        description: `Les prix seront affichés en ${value}`,
+                      })
+                    }}>
+                      <SelectTrigger className="w-40 h-11 bg-[#F2F2F7] dark:bg-[#2C2C2E] border-0 rounded-xl text-[#007AFF]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl border-[#E5E5EA] dark:border-[#38383A] bg-[#FFFFFF] dark:bg-[#1C1C1E]">
+                        <SelectItem value="USD" className="rounded-lg">
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg">🇺🇸</span>
+                            <div className="flex flex-col">
+                              <span className="font-medium">Dollar US</span>
+                              <span className="text-xs text-[#8E8E93]">USD ($)</span>
+                            </div>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="EUR" className="rounded-lg">
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg">🇪🇺</span>
+                            <div className="flex flex-col">
+                              <span className="font-medium">Euro</span>
+                              <span className="text-xs text-[#8E8E93]">EUR (€)</span>
+                            </div>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="CHF" className="rounded-lg">
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg">🇨🇭</span>
+                            <div className="flex flex-col">
+                              <span className="font-medium">Franc Suisse</span>
+                              <span className="text-xs text-[#8E8E93]">CHF</span>
+                            </div>
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </CardContent>
               </Card>

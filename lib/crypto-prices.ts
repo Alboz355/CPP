@@ -1,5 +1,5 @@
-// Service de gestion des prix des cryptomonnaies - VERSION RÉELLE
-// Utilise CoinMarketCap et taux de change réels
+// Service de gestion des prix des cryptomonnaies - VERSION USD PAR DÉFAUT
+// Utilise CoinMarketCap avec vrais prix actuels en USD
 
 export interface CryptoPrice {
   id: string
@@ -12,7 +12,7 @@ export interface CryptoPrice {
   image?: string
 }
 
-export type Currency = "CHF" | "EUR" | "USD"
+export type Currency = "USD" | "EUR" | "CHF"
 
 export class CryptoPriceService {
   private static instance: CryptoPriceService
@@ -30,7 +30,7 @@ export class CryptoPriceService {
     return CryptoPriceService.instance
   }
 
-  async getCryptoPrices(currency: Currency = "CHF"): Promise<CryptoPrice[]> {
+  async getCryptoPrices(currency: Currency = "USD"): Promise<CryptoPrice[]> {
     const cacheKey = `crypto-prices-${currency}`
     const cached = this.cache.get(cacheKey)
 
@@ -42,7 +42,7 @@ export class CryptoPriceService {
     try {
       console.log(`🚀 Récupération prix cryptos réels (${currency})...`)
 
-      // Récupérer les prix depuis notre API sécurisée
+      // Récupérer les prix depuis notre API sécurisée (toujours en USD)
       const response = await fetch('/api/crypto-prices', {
         method: 'GET',
         headers: {
@@ -58,24 +58,13 @@ export class CryptoPriceService {
       const json = await response.json()
       let data = json.data || []
 
-      console.log(`✅ ${data.length} prix reçus de CoinMarketCap`)
-
-      // Si les prix sont en CHF et qu'on veut une autre devise, convertir
-      if (currency !== 'CHF' && json.currency === 'CHF') {
-        const rates = await this.getExchangeRates()
-        const conversionRate = this.getConversionRate('CHF', currency, rates)
-        
-        data = data.map((crypto: any) => ({
-          ...crypto,
-          current_price: crypto.current_price * conversionRate,
-          market_cap: crypto.market_cap * conversionRate
-        }))
-        
-        console.log(`🔄 Prix convertis CHF -> ${currency} (taux: ${conversionRate})`)
+      console.log(`✅ ${data.length} prix reçus de CoinMarketCap en USD`)
+      if (data[0]) {
+        console.log(`🔥 BTC: $${data.find(c => c.symbol === 'BTC')?.current_price.toFixed(2)} USD`)
       }
-      
-      // Si les prix sont en USD et qu'on veut CHF ou EUR, convertir
-      else if (json.currency === 'USD' && currency !== 'USD') {
+
+      // Convertir depuis USD vers la devise demandée
+      if (currency !== 'USD') {
         const rates = await this.getExchangeRates()
         const conversionRate = rates[currency] || 1
         
@@ -101,7 +90,7 @@ export class CryptoPriceService {
     } catch (error) {
       console.error('❌ Error fetching crypto prices:', error)
       
-      // Retourner des données de fallback pour ne pas casser l'UX
+      // Retourner des données de fallback avec vrais prix actuels
       const fallbackData = await this.getFallbackPrices(currency)
       console.log(`🆘 Utilisation données de fallback pour ${currency}`)
       return fallbackData
@@ -144,67 +133,53 @@ export class CryptoPriceService {
     return defaultRates
   }
 
-  private getConversionRate(fromCurrency: Currency, toCurrency: Currency, rates: Record<string, number>): number {
-    if (fromCurrency === toCurrency) return 1
-    
-    // Si on convertit depuis CHF
-    if (fromCurrency === 'CHF') {
-      if (toCurrency === 'USD') return 1 / rates.CHF
-      if (toCurrency === 'EUR') return rates.EUR / rates.CHF
-    }
-    
-    // Si on convertit depuis USD
-    if (fromCurrency === 'USD') {
-      return rates[toCurrency] || 1
-    }
-    
-    // Si on convertit depuis EUR
-    if (fromCurrency === 'EUR') {
-      if (toCurrency === 'USD') return 1 / rates.EUR
-      if (toCurrency === 'CHF') return rates.CHF / rates.EUR
-    }
-    
-    return 1
-  }
-
   private async getFallbackPrices(currency: Currency): Promise<CryptoPrice[]> {
-    // Données de fallback avec des prix approximatifs en USD
+    // Données de fallback avec des prix approximatifs actuels en USD
     const basePrices = [
       { 
         id: 'bitcoin', 
         symbol: 'BTC', 
         name: 'Bitcoin', 
-        current_price: 65000, 
+        current_price: 105000, // Prix actuel approximatif
         price_change_percentage_24h: 2.1, 
-        market_cap: 1280000000000, 
+        market_cap: 2070000000000, 
         image: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1.png' 
       },
       { 
         id: 'ethereum', 
         symbol: 'ETH', 
         name: 'Ethereum', 
-        current_price: 3200, 
+        current_price: 4100, 
         price_change_percentage_24h: 1.5, 
-        market_cap: 385000000000, 
+        market_cap: 493000000000, 
         image: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1027.png' 
       },
       { 
         id: 'algorand', 
         symbol: 'ALGO', 
         name: 'Algorand', 
-        current_price: 0.25, 
+        current_price: 0.38, 
         price_change_percentage_24h: -0.8, 
-        market_cap: 2100000000, 
+        market_cap: 3100000000, 
         image: 'https://s2.coinmarketcap.com/static/img/coins/64x64/4030.png' 
       },
       { 
         id: 'solana', 
         symbol: 'SOL', 
         name: 'Solana', 
-        current_price: 150, 
+        current_price: 220, 
         price_change_percentage_24h: 3.4, 
-        market_cap: 67000000000, 
+        market_cap: 105000000000, 
         image: 'https://s2.coinmarketcap.com/static/img/coins/64x64/5426.png' 
+      },
+      { 
+        id: 'usd-coin', 
+        symbol: 'USDC', 
+        name: 'USD Coin', 
+        current_price: 1.0, 
+        price_change_percentage_24h: 0.01, 
+        market_cap: 78000000000, 
+        image: 'https://s2.coinmarketcap.com/static/img/coins/64x64/3408.png' 
       },
     ]
 
@@ -224,7 +199,7 @@ export class CryptoPriceService {
   }
 
   // Récupérer le prix d'une crypto spécifique
-  async getCryptoPrice(symbol: string, currency: Currency = 'CHF'): Promise<number> {
+  async getCryptoPrice(symbol: string, currency: Currency = 'USD'): Promise<number> {
     try {
       const prices = await this.getCryptoPrices(currency)
       const crypto = prices.find(p => p.symbol === symbol.toUpperCase())
@@ -235,14 +210,14 @@ export class CryptoPriceService {
     }
   }
 
-  // Calculer la valeur en CHF d'une quantité de crypto
-  async calculateValue(amount: number, cryptoSymbol: string, targetCurrency: Currency = 'CHF'): Promise<number> {
+  // Calculer la valeur d'une quantité de crypto
+  async calculateValue(amount: number, cryptoSymbol: string, targetCurrency: Currency = 'USD'): Promise<number> {
     if (amount === 0) return 0
     
     try {
       const price = await this.getCryptoPrice(cryptoSymbol, targetCurrency)
       const value = amount * price
-      console.log(`💰 ${amount} ${cryptoSymbol} = ${value.toFixed(2)} ${targetCurrency}`)
+      console.log(`💰 ${amount} ${cryptoSymbol} = ${this.formatPrice(value, targetCurrency)}`)
       return value
     } catch (error) {
       console.error(`Erreur calcul valeur ${cryptoSymbol}:`, error)
@@ -250,26 +225,34 @@ export class CryptoPriceService {
     }
   }
 
-  formatPrice(price: number, currency: Currency = 'CHF'): string {
-    const locales = { CHF: 'fr-CH', EUR: 'de-DE', USD: 'en-US' }
-    return new Intl.NumberFormat(locales[currency], {
-      style: 'currency',
-      currency: currency,
-      minimumFractionDigits: price < 1 ? 4 : 2,
-      maximumFractionDigits: price < 1 ? 6 : 2
-    }).format(price)
+  formatPrice(price: number, currency: Currency = 'USD'): string {
+    const locales = { USD: 'en-US', EUR: 'de-DE', CHF: 'fr-CH' }
+    const locale = locales[currency] || 'en-US'
+    
+    try {
+      return new Intl.NumberFormat(locale, {
+        style: 'currency',
+        currency: currency,
+        minimumFractionDigits: price < 1 ? 4 : 2,
+        maximumFractionDigits: price < 1 ? 6 : 2
+      }).format(price)
+    } catch (error) {
+      // Fallback
+      const symbol = currency === 'USD' ? '$' : currency === 'EUR' ? '€' : currency + ' '
+      return `${symbol}${price.toFixed(2)}`
+    }
   }
 
-  formatMarketCap(marketCap: number, currency: Currency = 'CHF'): string {
-    const currencySymbol = currency === 'EUR' ? '€' : currency === 'USD' ? '$' : 'CHF'
-    if (marketCap >= 1e12) return `${(marketCap / 1e12).toFixed(2)}T ${currencySymbol}`
-    if (marketCap >= 1e9) return `${(marketCap / 1e9).toFixed(2)}B ${currencySymbol}`
-    if (marketCap >= 1e6) return `${(marketCap / 1e6).toFixed(2)}M ${currencySymbol}`
-    return `${marketCap.toLocaleString()} ${currencySymbol}`
+  formatMarketCap(marketCap: number, currency: Currency = 'USD'): string {
+    const symbol = currency === 'EUR' ? '€' : currency === 'USD' ? '$' : currency + ' '
+    if (marketCap >= 1e12) return `${symbol}${(marketCap / 1e12).toFixed(2)}T`
+    if (marketCap >= 1e9) return `${symbol}${(marketCap / 1e9).toFixed(2)}B`
+    if (marketCap >= 1e6) return `${symbol}${(marketCap / 1e6).toFixed(2)}M`
+    return `${symbol}${marketCap.toLocaleString()}`
   }
 
   getCurrencySymbol(currency: Currency): string {
-    const symbols = { CHF: 'CHF', EUR: '€', USD: '$' }
+    const symbols = { USD: '$', EUR: '€', CHF: 'CHF' }
     return symbols[currency]
   }
 

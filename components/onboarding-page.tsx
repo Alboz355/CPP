@@ -39,12 +39,14 @@ interface WalletData {
     ethereum: string
     algorand: string
     solana: string
+    usdc: string
   }
   balances: {
     bitcoin: string
     ethereum: string
     algorand: string
     solana: string
+    usdc: string
   }
   accounts: any[]
 }
@@ -83,6 +85,7 @@ export function OnboardingPage({ onWalletCreated }: OnboardingPageProps) {
           ethereum: "0.000000000000000000",
           algorand: "0.000000",
           solana: "0.000000",
+          usdc: "0.000000000000000000",
         },
         accounts: [
           {
@@ -112,6 +115,13 @@ export function OnboardingPage({ onWalletCreated }: OnboardingPageProps) {
             address: (addresses as any).solana,
             balance: "0.000000",
             currency: "SOL",
+          },
+          {
+            id: "usdc-account",
+            name: "USDC Principal",
+            address: (addresses as any).usdc,
+            balance: "0.000000000000000000",
+            currency: "USDC",
           },
         ],
       }
@@ -150,6 +160,7 @@ export function OnboardingPage({ onWalletCreated }: OnboardingPageProps) {
           ethereum: "0.000000000000000000",
           algorand: "0.000000",
           solana: "0.000000",
+          usdc: "0.000000000000000000",
         },
         accounts: [
           {
@@ -179,6 +190,13 @@ export function OnboardingPage({ onWalletCreated }: OnboardingPageProps) {
             address: (addresses as any).solana,
             balance: "0.000000",
             currency: "SOL",
+          },
+          {
+            id: "usdc-account",
+            name: "USDC Principal",
+            address: (addresses as any).usdc,
+            balance: "0.000000000000000000",
+            currency: "USDC",
           },
         ],
       }

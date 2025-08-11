@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
 
     // Récupérer les données du wallet depuis le body
     const body = await request.json()
-    const { addresses, currency = 'CHF' } = body
+    const { addresses, currency = 'USD' } = body
 
     if (!addresses || typeof addresses !== 'object') {
       return NextResponse.json({ error: 'Missing or invalid addresses object' }, { status: 400 })

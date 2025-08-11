@@ -75,7 +75,7 @@ export function MainDashboard({ userType, onNavigate, walletData, onShowMtPeleri
   const dashboardData = useMemo(() => {
     // Données par défaut
     let totalBalance = 0
-    let totalBalanceFormatted = 'CHF 0.00'
+    let totalBalanceFormatted = '$0.00'
     let isLoading = true
     
     return {
@@ -104,7 +104,7 @@ export function MainDashboard({ userType, onNavigate, walletData, onShowMtPeleri
     error?: string
   }>({
     total: 0,
-    formatted: 'CHF 0.00',
+    formatted: '$0.00',
     breakdown: {},
     isLoading: true
   })
@@ -128,7 +128,7 @@ export function MainDashboard({ userType, onNavigate, walletData, onShowMtPeleri
         },
         body: JSON.stringify({
           addresses: walletData.addresses,
-          currency: 'CHF'
+          currency: 'USD'
         })
       })
 
