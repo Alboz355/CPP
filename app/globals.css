@@ -8,10 +8,11 @@
   .btn-primary {
     @apply bg-[#007AFF] text-white font-medium px-6 py-3 rounded-xl;
     @apply hover:bg-[#0051D5] active:scale-[0.98];
-    @apply transition-all duration-200;
+    @apply transition-all duration-200 ease-out;
     @apply shadow-sm hover:shadow-lg;
-    @apply disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none;
     @apply flex items-center justify-center gap-2;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#007AFF]/50 focus-visible:ring-offset-2;
   }
 
   /* Bouton secondaire */
@@ -21,9 +22,11 @@
     @apply font-medium px-6 py-3 rounded-xl;
     @apply hover:bg-[#F2F2F7] dark:hover:bg-[#2C2C2E];
     @apply hover:border-[#007AFF] dark:hover:border-[#007AFF];
-    @apply active:scale-[0.98] transition-all duration-200;
+    @apply active:scale-[0.98] transition-all duration-200 ease-out;
     @apply shadow-sm hover:shadow-md;
     @apply flex items-center justify-center gap-2;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#007AFF]/50 focus-visible:ring-offset-2;
+    @apply disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none;
   }
 
   /* Bouton icône */
@@ -33,8 +36,10 @@
     @apply border border-[#E5E5EA] dark:border-[#38383A];
     @apply rounded-xl hover:bg-[#F2F2F7] dark:hover:bg-[#2C2C2E];
     @apply hover:border-[#007AFF] dark:hover:border-[#007AFF];
-    @apply transition-all duration-200;
+    @apply transition-all duration-200 ease-out;
     @apply active:scale-[0.98];
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#007AFF]/50 focus-visible:ring-offset-2;
+    @apply disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none;
   }
 
   /* Bouton action (grand) */
@@ -45,12 +50,14 @@
     @apply border border-[#E5E5EA] dark:border-[#38383A];
     @apply hover:bg-[#F2F2F7] dark:hover:bg-[#2C2C2E];
     @apply hover:border-[#007AFF] dark:hover:border-[#007AFF];
-    @apply transition-all duration-200;
+    @apply transition-all duration-200 ease-out;
     @apply active:scale-[0.98];
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#007AFF]/50 focus-visible:ring-offset-2;
+    @apply disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none;
   }
 
   .btn-action:hover svg {
-    @apply scale-110 transition-transform duration-200;
+    @apply scale-110 transition-transform duration-200 ease-out;
   }
 
   /* Formatage des soldes */
@@ -59,11 +66,61 @@
   }
 
   .balance-zero {
-    @apply text-[#8E8E93];
+    @apply text-[#8E8E93] dark:text-[#8E8E93];
   }
 
   .balance-positive {
     @apply text-[#000000] dark:text-[#FFFFFF] font-semibold;
+  }
+
+  /* Classes utilitaires pour la cohérence des couleurs */
+  .text-primary {
+    @apply text-[#007AFF];
+  }
+
+  .bg-primary {
+    @apply bg-[#007AFF];
+  }
+
+  .text-success {
+    @apply text-[#34C759];
+  }
+
+  .bg-success {
+    @apply bg-[#34C759];
+  }
+
+  .text-warning {
+    @apply text-[#FF9500];
+  }
+
+  .bg-warning {
+    @apply bg-[#FF9500];
+  }
+
+  .text-error {
+    @apply text-[#FF3B30];
+  }
+
+  .bg-error {
+    @apply bg-[#FF3B30];
+  }
+
+  .text-secondary {
+    @apply text-[#8E8E93];
+  }
+
+  /* Card styles améliorés */
+  .card-enhanced {
+    @apply bg-[#FFFFFF] dark:bg-[#1C1C1E];
+    @apply border border-[#E5E5EA] dark:border-[#38383A];
+    @apply rounded-2xl shadow-sm;
+    @apply transition-all duration-200 ease-out;
+  }
+
+  .card-enhanced:hover {
+    @apply shadow-lg;
+    @apply border-[#007AFF]/20 dark:border-[#007AFF]/30;
   }
 }
 
@@ -172,6 +229,11 @@ html {
   /* Full viewport height including safe areas */
   height: 100%;
   height: 100dvh;
+  /* Improve font rendering */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Improve touch responsiveness */
+  touch-action: manipulation;
 }
 
 body {
@@ -186,6 +248,12 @@ body {
   min-height: 100dvh;
   /* Prevent horizontal scroll */
   overflow-x: hidden;
+  /* Improve performance */
+  will-change: auto;
+  /* Better font rendering */
+  text-rendering: optimizeLegibility;
+  /* Improve touch interactions */
+  touch-action: pan-x pan-y;
 }
 
 /* Hide scrollbars */

@@ -143,6 +143,48 @@ export default function RootLayout({
         {/* Preconnect for performance */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        
+        {/* Service Worker Registration */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                  navigator.serviceWorker.register('/sw.js')
+                    .then((registration) => {
+                      console.log('SW registered: ', registration);
+                      
+                      // Gérer les mises à jour
+                      registration.addEventListener('updatefound', () => {
+                        const newWorker = registration.installing;
+                        if (newWorker) {
+                          newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                              // Nouvelle version disponible
+                              if (confirm('Une nouvelle version est disponible. Voulez-vous actualiser?')) {
+                                newWorker.postMessage({ type: 'SKIP_WAITING' });
+                                window.location.reload();
+                              }
+                            }
+                          });
+                        }
+                      });
+                    })
+                    .catch((registrationError) => {
+                      console.log('SW registration failed: ', registrationError);
+                    });
+                    
+                  // Écouter les messages du service worker
+                  navigator.serviceWorker.addEventListener('message', (event) => {
+                    if (event.data && event.data.type === 'UPDATE_AVAILABLE') {
+                      console.log('Update available:', event.data.payload.version);
+                    }
+                  });
+                });
+              }
+            `,
+          }}
+        />
       </head>
       <body className={`${inter.className} antialiased`}>
         <ThemeProvider

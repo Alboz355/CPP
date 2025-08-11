@@ -73,16 +73,22 @@ export function MainDashboard({ userType, onNavigate, walletData, onShowMtPeleri
   
   // Utiliser les vraies données du wallet
   const dashboardData = useMemo(() => {
+    // Récupérer les soldes individuels (ils sont déjà en unités de crypto)
     const btcBalance = walletData?.balances?.bitcoin || 0
     const ethBalance = walletData?.balances?.ethereum || 0
     const algoBalance = walletData?.balances?.algorand || 0
     const solBalance = walletData?.balances?.solana || 0
     
-    // Calculer le total en CHF (vous pouvez utiliser les vrais taux de change)
-    const totalBalance = btcBalance + ethBalance + algoBalance + solBalance
+    // Pour le moment, on affiche 0 CHF si pas de données de prix
+    // Plus tard, on intégrera les vrais taux de change
+    const totalBalance = 0 // Toujours afficher 0 CHF en attendant l'intégration des prix réels
     
     return {
       totalBalance,
+      btcBalance,
+      ethBalance,
+      algoBalance,
+      solBalance,
       monthlyChange: 0, // Sera calculé avec l'historique réel
       monthlyTransactions: 0,
       monthlyVolume: 0,
@@ -244,18 +250,14 @@ export function MainDashboard({ userType, onNavigate, walletData, onShowMtPeleri
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-[#8E8E93] mb-2 text-sm font-medium" id="balance-title">{t.dashboard.totalBalance}</p>
-                  <p className={`text-4xl font-bold balance-display ${dashboardData.totalBalance === 0 ? 'balance-zero' : 'balance-positive'} ${focusMode ? 'sensitive-data' : ''}`} 
+                  <p className={`text-4xl font-bold balance-display balance-zero ${focusMode ? 'sensitive-data' : ''}`} 
                      aria-live="polite">
-                    CHF {dashboardData.totalBalance === 0 ? '0' : dashboardData.totalBalance.toLocaleString('fr-CH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    CHF 0.00
                   </p>
                   <div className="flex items-center gap-2 mt-3" role="status" aria-live="polite">
-                    {dashboardData.monthlyChange >= 0 ? (
-                      <TrendingUp className="h-4 w-4 text-[#34C759]" aria-hidden="true" />
-                    ) : (
-                      <TrendingDown className="h-4 w-4 text-[#FF3B30]" aria-hidden="true" />
-                    )}
+                    <TrendingUp className="h-4 w-4 text-[#8E8E93]" aria-hidden="true" />
                     <span className="text-sm text-[#8E8E93] font-medium">
-                      {dashboardData.monthlyChange >= 0 ? '+' : ''}{dashboardData.monthlyChange}% {t.time.thisMonth}
+                      0.00% {t.time.thisMonth}
                     </span>
                   </div>
                 </div>
@@ -331,7 +333,7 @@ export function MainDashboard({ userType, onNavigate, walletData, onShowMtPeleri
                   </div>
                   <div>
                     <p className="text-sm text-[#8E8E93]">{t.dashboard.statistics.volumeExchanged}</p>
-                    <p className="text-2xl font-bold text-[#000000] dark:text-[#FFFFFF]">CHF {dashboardData.monthlyVolume.toLocaleString('fr-CH')}</p>
+                    <p className="text-2xl font-bold text-[#000000] dark:text-[#FFFFFF]">CHF 0</p>
                   </div>
                 </div>
               </CardContent>
