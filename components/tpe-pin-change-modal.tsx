@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Progress } from "@/components/ui/progress"
 import { Card, CardContent } from "@/components/ui/card"
 import { Key, Eye, EyeOff, Shield, CheckCircle, AlertTriangle, Clock, Lock } from "lucide-react"
+import { verifyPin as verifyHashedPin, setPin as setHashedPin } from "@/lib/pin-utils"
 
 interface TPEPinChangeModalProps {
   isOpen: boolean
@@ -48,8 +49,7 @@ export function TPEPinChangeModal({ isOpen, onClose }: TPEPinChangeModalProps) {
     await new Promise((resolve) => setTimeout(resolve, 1500))
 
     // Vérifier avec le PIN stocké (en production, utiliser un hash sécurisé)
-    const storedPin = localStorage.getItem("pin-hash")
-    const isValid = storedPin === btoa(currentPin)
+    const isValid = await verifyHashedPin(currentPin)
 
     if (isValid) {
       addSecurityLog("PIN_VERIFICATION", "success", "Vérification du PIN actuel réussie")
@@ -108,7 +108,7 @@ export function TPEPinChangeModal({ isOpen, onClose }: TPEPinChangeModalProps) {
     await new Promise((resolve) => setTimeout(resolve, 2000))
 
     // Sauvegarder le nouveau PIN (en production, utiliser un hash sécurisé)
-    localStorage.setItem("pin-hash", btoa(newPin))
+    await setHashedPin(newPin)
 
     addSecurityLog("PIN_CHANGE", "success", "Code PIN modifié avec succès")
     setStep("success")
@@ -165,13 +165,13 @@ export function TPEPinChangeModal({ isOpen, onClose }: TPEPinChangeModalProps) {
           {/* Progress Indicator */}
           <div className="flex items-center justify-between text-sm">
             <div
-              className={`flex items-center gap-2 ${step === "verify" ? "text-blue-600" : step !== "verify" ? "text-green-600" : "text-gray-400"}`}
+              className={`flex items-center gap-2 ${step === "verify" ? "text-blue-600" : (step === "new" || step === "confirm" || step === "success") ? "text-green-600" : "text-gray-400"}`}
             >
               <div
                 className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
                   step === "verify"
                     ? "bg-blue-600 text-white"
-                    : step !== "verify"
+                    : (step === "new" || step === "confirm" || step === "success")
                       ? "bg-green-600 text-white"
                       : "bg-gray-200"
                 }`}
@@ -181,13 +181,13 @@ export function TPEPinChangeModal({ isOpen, onClose }: TPEPinChangeModalProps) {
               Vérifier
             </div>
             <div
-              className={`flex items-center gap-2 ${step === "new" ? "text-blue-600" : ["confirm", "success"].includes(step) ? "text-green-600" : "text-gray-400"}`}
+              className={`flex items-center gap-2 ${step === "new" ? "text-blue-600" : (step === "confirm" || step === "success") ? "text-green-600" : "text-gray-400"}`}
             >
               <div
                 className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
                   step === "new"
                     ? "bg-blue-600 text-white"
-                    : ["confirm", "success"].includes(step)
+                    : (step === "confirm" || step === "success")
                       ? "bg-green-600 text-white"
                       : "bg-gray-200"
                 }`}

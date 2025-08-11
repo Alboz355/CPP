@@ -4,26 +4,26 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Globe, Check } from "lucide-react"
-import { Language, getSupportedLanguages, getTranslations } from "@/lib/i18n"
+import { type Language, type LanguageInfo, getSupportedLanguages, getTranslations } from "@/lib/i18n"
 
 interface LanguageSelectionProps {
   onLanguageSelected: (language: Language) => void
 }
 
 export function LanguageSelection({ onLanguageSelected }: LanguageSelectionProps) {
-  const [selectedLanguage, setSelectedLanguage] = useState<Language | null>(null)
+  const [selectedLanguage, setSelectedLanguage] = useState<LanguageInfo | null>(null)
   
   // Default to French for initial display
-  const t = getTranslations(selectedLanguage?.code || 'fr')
+  const t = getTranslations((selectedLanguage?.code || 'fr') as Language)
   const availableLanguages = getSupportedLanguages()
 
-  const handleLanguageSelect = (language: Language) => {
+  const handleLanguageSelect = (language: LanguageInfo) => {
     setSelectedLanguage(language)
   }
 
   const handleContinue = () => {
     if (selectedLanguage) {
-      onLanguageSelected(selectedLanguage)
+      onLanguageSelected(selectedLanguage.code)
     }
   }
 

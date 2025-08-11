@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -27,69 +27,23 @@ interface Transaction {
   hash: string
 }
 
-// Données de démonstration
-const mockTransactions: Transaction[] = [
-  {
-    id: "1",
-    type: "receive",
-    crypto: "bitcoin",
-    amount: "0.00125000",
-    fiatAmount: "52.50",
-    address: "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh",
-    status: "completed",
-    timestamp: new Date("2024-01-15T14:30:00"),
-    fee: "0.00001500",
-    hash: "a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6",
-  },
-  {
-    id: "2",
-    type: "send",
-    crypto: "ethereum",
-    amount: "0.05000000",
-    fiatAmount: "125.75",
-    address: "0x742d35Cc6634C0532925a3b8D4C0532925a3b8D4",
-    status: "completed",
-    timestamp: new Date("2024-01-14T09:15:00"),
-    fee: "0.00250000",
-    hash: "b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6a1",
-  },
-  {
-    id: "3",
-    type: "send",
-    crypto: "algorand",
-    amount: "100.00000000",
-    fiatAmount: "18.50",
-    address: "ALGORAND7UHCUR2FJKL5QWERTYUIOPASDFGHJKLZXCVBNM",
-    status: "pending",
-    timestamp: new Date("2024-01-13T16:45:00"),
-    fee: "0.00100000",
-    hash: "c3d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6a1b2",
-  },
-  {
-    id: "4",
-    type: "receive",
-    crypto: "bitcoin",
-    amount: "0.00250000",
-    fiatAmount: "105.00",
-    address: "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh",
-    status: "failed",
-    timestamp: new Date("2024-01-12T11:20:00"),
-    fee: "0.00001000",
-    hash: "d4e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6a1b2c3",
-  },
-  {
-    id: "5",
-    type: "receive",
-    crypto: "ethereum",
-    amount: "0.10000000",
-    fiatAmount: "251.50",
-    address: "0x742d35Cc6634C0532925a3b8D4C0532925a3b8D4",
-    status: "completed",
-    timestamp: new Date("2024-01-11T13:10:00"),
-    fee: "0.00180000",
-    hash: "e5f6g7h8i9j0k1l2m3n4o5p6q7r8s9t0u1v2w3x4y5z6a1b2c3d4",
-  },
-]
+// Récupérer les vraies transactions depuis localStorage
+const getTransactionHistory = (): Transaction[] => {
+  try {
+    const history = localStorage.getItem('transaction-history')
+    if (history) {
+      const parsed = JSON.parse(history)
+      // Convertir les timestamps en Date objects
+      return parsed.map((tx: any) => ({
+        ...tx,
+        timestamp: new Date(tx.timestamp)
+      }))
+    }
+  } catch (error) {
+    console.error('Error loading transaction history:', error)
+  }
+  return []
+}
 
 export function TransactionHistory({ onNavigate }: TransactionHistoryProps) {
   const { t } = useLanguage()
@@ -98,10 +52,36 @@ export function TransactionHistory({ onNavigate }: TransactionHistoryProps) {
   const [filterCrypto, setFilterCrypto] = useState<"all" | "bitcoin" | "ethereum" | "algorand">("all")
   const [filterStatus, setFilterStatus] = useState<"all" | "completed" | "pending" | "failed">("all")
 
-  const filteredTransactions = useMemo(() => {
-    if (!mockTransactions || mockTransactions.length === 0) return []
+  const [transactions, setTransactions] = useState<Transaction[]>([])
 
-    return mockTransactions.filter((transaction) => {
+  useEffect(() => {
+    // Charger l'historique au montage et écouter les changements
+    const loadTransactions = () => {
+      setTransactions(getTransactionHistory())
+    }
+    loadTransactions()
+
+    // Écouter les changements dans localStorage
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'transaction-history') {
+        loadTransactions()
+      }
+    }
+    window.addEventListener('storage', handleStorageChange)
+
+    // Rafraîchir périodiquement
+    const interval = setInterval(loadTransactions, 5000)
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+      clearInterval(interval)
+    }
+  }, [])
+
+  const filteredTransactions = useMemo(() => {
+    if (!transactions || transactions.length === 0) return []
+
+    return transactions.filter((transaction) => {
       const matchesSearch =
         searchTerm === "" ||
         transaction.address.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -208,57 +188,69 @@ export function TransactionHistory({ onNavigate }: TransactionHistoryProps) {
     window.URL.revokeObjectURL(url)
   }
 
+  const clearFilters = () => {
+    setSearchTerm("")
+    setFilterType("all")
+    setFilterCrypto("all")
+    setFilterStatus("all")
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:to-gray-800 p-4">
+    <div className="min-h-screen bg-[#F2F2F7] dark:bg-[#000000] p-4">
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
+        {/* Header Style Apple */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-4">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => onNavigate("dashboard")}
-              className="flex items-center space-x-2"
+              className="flex items-center space-x-2 bg-[#FFFFFF] dark:bg-[#1C1C1E] border-[#E5E5EA] dark:border-[#38383A] hover:bg-[#F2F2F7] dark:hover:bg-[#2C2C2E] rounded-xl"
             >
-              <ArrowLeft className="h-4 w-4" />
-              <span>{t.common.back}</span>
+              <ArrowLeft className="h-4 w-4 text-[#007AFF]" />
+              <span className="text-[#007AFF] font-medium">{t.common.back}</span>
             </Button>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{t.history.title}</h1>
-              <p className="text-gray-600 dark:text-gray-400">{t.history.subtitle}</p>
+              <h1 className="text-3xl font-semibold text-[#000000] dark:text-[#FFFFFF]">{t.history.title}</h1>
+              <p className="text-[#8E8E93]">{t.history.subtitle}</p>
             </div>
           </div>
-          <Button onClick={exportToCSV} className="flex items-center space-x-2">
+          <Button 
+            onClick={exportToCSV} 
+            className="apple-button flex items-center space-x-2"
+          >
             <Download className="h-4 w-4" />
             <span>{t.history.exportCSV}</span>
           </Button>
         </div>
 
-        {/* Filters */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Filter className="h-5 w-5" />
-              <span>{t.history.filters.title}</span>
+        {/* Filters Style Apple */}
+        <Card className="apple-card mb-6">
+          <CardHeader className="apple-card-header">
+            <CardTitle className="apple-card-title">
+              <div className="p-2 bg-[#F2F2F7] dark:bg-[#2C2C2E] rounded-lg">
+                <Filter className="h-5 w-5 text-[#007AFF]" />
+              </div>
+              {t.history.filters.title}
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="apple-card-content">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#8E8E93]" />
                 <Input
                   placeholder={t.history.filters.searchPlaceholder}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 apple-input"
                 />
               </div>
 
               <Select value={filterType} onValueChange={(value: any) => setFilterType(value)}>
-                <SelectTrigger>
+                <SelectTrigger className="apple-input">
                   <SelectValue placeholder="Type" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="rounded-xl border-[#E5E5EA] dark:border-[#38383A] bg-[#FFFFFF] dark:bg-[#1C1C1E]">
                   <SelectItem value="all">{t.history.filters.allTypes}</SelectItem>
                   <SelectItem value="send">{t.history.filters.sent}</SelectItem>
                   <SelectItem value="receive">{t.history.filters.received}</SelectItem>
@@ -266,10 +258,10 @@ export function TransactionHistory({ onNavigate }: TransactionHistoryProps) {
               </Select>
 
               <Select value={filterCrypto} onValueChange={(value: any) => setFilterCrypto(value)}>
-                <SelectTrigger>
+                <SelectTrigger className="apple-input">
                   <SelectValue placeholder="Crypto" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="rounded-xl border-[#E5E5EA] dark:border-[#38383A] bg-[#FFFFFF] dark:bg-[#1C1C1E]">
                   <SelectItem value="all">{t.history.filters.allCryptos}</SelectItem>
                   <SelectItem value="bitcoin">{t.crypto.bitcoin}</SelectItem>
                   <SelectItem value="ethereum">{t.crypto.ethereum}</SelectItem>
@@ -278,10 +270,10 @@ export function TransactionHistory({ onNavigate }: TransactionHistoryProps) {
               </Select>
 
               <Select value={filterStatus} onValueChange={(value: any) => setFilterStatus(value)}>
-                <SelectTrigger>
+                <SelectTrigger className="apple-input">
                   <SelectValue placeholder="Statut" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="rounded-xl border-[#E5E5EA] dark:border-[#38383A] bg-[#FFFFFF] dark:bg-[#1C1C1E]">
                   <SelectItem value="all">{t.history.filters.allStatuses}</SelectItem>
                   <SelectItem value="completed">{t.history.filters.completed}</SelectItem>
                   <SelectItem value="pending">{t.history.filters.pending}</SelectItem>
@@ -289,14 +281,10 @@ export function TransactionHistory({ onNavigate }: TransactionHistoryProps) {
                 </SelectContent>
               </Select>
 
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setSearchTerm("")
-                  setFilterType("all")
-                  setFilterCrypto("all")
-                  setFilterStatus("all")
-                }}
+              <Button 
+                variant="outline" 
+                onClick={clearFilters}
+                className="apple-button-outline"
               >
                 {t.history.filters.reset}
               </Button>
@@ -304,18 +292,18 @@ export function TransactionHistory({ onNavigate }: TransactionHistoryProps) {
           </CardContent>
         </Card>
 
-        {/* Transactions List */}
+        {/* Transactions List Style Apple */}
         <div className="space-y-4">
           {filteredTransactions.length === 0 ? (
-            <Card>
+            <Card className="apple-card">
               <CardContent className="text-center py-12">
-                <div className="text-gray-400 mb-4">
+                <div className="text-[#8E8E93] mb-4">
                   <Clock className="h-12 w-12 mx-auto" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-600 dark:text-gray-400 mb-2">
+                <h3 className="text-lg font-semibold text-[#000000] dark:text-[#FFFFFF] mb-2">
                   {t.history.noTransactions}
                 </h3>
-                <p className="text-gray-500 dark:text-gray-500">
+                <p className="text-[#8E8E93]">
                   {searchTerm || filterType !== "all" || filterCrypto !== "all" || filterStatus !== "all"
                     ? t.history.noTransactionsFiltered
                     : t.history.noTransactionsDescription}
@@ -324,39 +312,45 @@ export function TransactionHistory({ onNavigate }: TransactionHistoryProps) {
             </Card>
           ) : (
             filteredTransactions.map((transaction) => (
-              <Card key={transaction.id} className="hover:shadow-lg transition-shadow">
+              <Card key={transaction.id} className="apple-card hover:shadow-lg transition-shadow">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-4">
                       <div
-                        className={`p-3 rounded-full ${transaction.type === "receive" ? "bg-green-100 dark:bg-green-900/20" : "bg-blue-100 dark:bg-blue-900/20"}`}
+                        className={`p-3 rounded-xl ${
+                          transaction.type === "receive" 
+                            ? "bg-[#34C759]/10" 
+                            : "bg-[#007AFF]/10"
+                        }`}
                       >
                         {transaction.type === "receive" ? (
                           <ArrowDownLeft
-                            className={`h-6 w-6 ${transaction.type === "receive" ? "text-green-600" : "text-blue-600"}`}
+                            className={`h-6 w-6 ${
+                              transaction.type === "receive" ? "text-[#34C759]" : "text-[#007AFF]"
+                            }`}
                           />
                         ) : (
                           <ArrowUpRight
-                            className={`h-6 w-6 ${transaction.type === "receive" ? "text-green-600" : "text-blue-600"}`}
+                            className={`h-6 w-6 text-[#007AFF]`}
                           />
                         )}
                       </div>
 
                       <div>
                         <div className="flex items-center space-x-2 mb-1">
-                          <span className="font-semibold text-lg">
+                          <span className="font-semibold text-lg text-[#000000] dark:text-[#FFFFFF]">
                             {transaction.type === "receive" ? "+" : "-"}
                             {transaction.amount} {getCryptoIcon(transaction.crypto)}
                           </span>
-                          <Badge variant="outline" className="text-xs">
+                          <Badge variant="outline" className="text-xs bg-[#007AFF]/10 text-[#007AFF] border-[#007AFF]/20">
                             {transaction.crypto.toUpperCase()}
                           </Badge>
                         </div>
-                        <div className="text-sm text-gray-600 dark:text-gray-400">
+                        <div className="text-sm text-[#8E8E93]">
                           {getTypeLabel(transaction.type)}: {transaction.address.slice(0, 20)}
                           ...
                         </div>
-                        <div className="text-xs text-gray-500 dark:text-gray-500">
+                        <div className="text-xs text-[#8E8E93]">
                           {transaction.timestamp.toLocaleDateString()} à {transaction.timestamp.toLocaleTimeString()}
                         </div>
                       </div>
@@ -369,10 +363,10 @@ export function TransactionHistory({ onNavigate }: TransactionHistoryProps) {
                           {getStatusLabel(transaction.status)}
                         </Badge>
                       </div>
-                      <div className="text-lg font-semibold">
+                      <div className="text-lg font-semibold text-[#000000] dark:text-[#FFFFFF]">
                         {transaction.type === "receive" ? "+" : "-"}${transaction.fiatAmount}
                       </div>
-                      <div className="text-xs text-gray-500 dark:text-gray-500">
+                      <div className="text-xs text-[#8E8E93]">
                         Frais: {transaction.fee} {getCryptoIcon(transaction.crypto)}
                       </div>
                     </div>
@@ -382,43 +376,6 @@ export function TransactionHistory({ onNavigate }: TransactionHistoryProps) {
             ))
           )}
         </div>
-
-        {/* Summary Stats */}
-        {filteredTransactions.length > 0 && (
-          <Card className="mt-6">
-            <CardHeader>
-              <CardTitle>{t.history.summary.title}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600">
-                    {filteredTransactions.filter((tx) => tx.type === "receive" && tx.status === "completed").length}
-                  </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">{t.history.summary.received}</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">
-                    {filteredTransactions.filter((tx) => tx.type === "send" && tx.status === "completed").length}
-                  </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">{t.history.summary.sent}</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-yellow-600">
-                    {filteredTransactions.filter((tx) => tx.status === "pending").length}
-                  </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">{t.history.summary.pending}</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-red-600">
-                    {filteredTransactions.filter((tx) => tx.status === "failed").length}
-                  </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">{t.history.summary.failed}</div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
       </div>
     </div>
   )

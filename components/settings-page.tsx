@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState, useEffect } from "react"
@@ -107,6 +108,10 @@ export function SettingsPage({
       } else {
         document.body.classList.remove('focus-mode')
       }
+    } else {
+      // Si pas de préférence sauvegardée, s'assurer que le mode focus est désactivé
+      setFocusMode(false)
+      document.body.classList.remove('focus-mode')
     }
 
     // Load other settings
@@ -292,567 +297,593 @@ export function SettingsPage({
   }
 
   return (
-    <div className="min-h-screen bg-background dark:bg-background ios-content-safe">
-      <div className="max-w-4xl mx-auto p-4 space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between sticky top-0 bg-background dark:bg-background z-10 py-2 ios-header-safe">
-          <Button variant="ghost" onClick={() => onNavigate("dashboard")} className="bg-background dark:bg-background">
-            <ArrowLeft className="h-5 w-5 mr-2" />
-            {t.common.back}
+    <div className="min-h-screen bg-[#F2F2F7] dark:bg-[#000000] ios-content-safe">
+      <div className="max-w-6xl mx-auto px-4 py-6 space-y-8">
+        {/* Header Ultra-Professionnel */}
+        <div className="flex items-center justify-between sticky top-0 bg-[#F2F2F7]/95 dark:bg-[#000000]/95 backdrop-blur-xl z-20 py-6 px-6 rounded-2xl ios-header-safe shadow-sm border border-[#E5E5EA]/50 dark:border-[#38383A]/50">
+          <Button variant="ghost" onClick={() => onNavigate("dashboard")} className="hover:bg-[#E5E5EA] dark:hover:bg-[#1C1C1E] rounded-xl h-11 px-4 transition-all duration-200">
+            <ArrowLeft className="h-5 w-5 mr-2 text-[#007AFF]" />
+            <span className="font-medium text-[#007AFF]">{t.common.back}</span>
           </Button>
-          <h1 className="text-2xl font-bold text-foreground">⚙️ {t.settings.title}</h1>
+          <div className="text-center flex-1 px-8">
+            <h1 className="text-3xl font-semibold text-[#000000] dark:text-[#FFFFFF] mb-1">
+              {t.settings.title}
+            </h1>
+            <p className="text-sm text-[#8E8E93]">Configuration et personnalisation avancées</p>
+          </div>
           <div className="w-20" />
         </div>
 
+        {/* Navigation Tabs Style Apple */}
         <Tabs defaultValue="general" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 bg-muted dark:bg-muted">
-            <TabsTrigger value="general">{t.settings.tabs.general}</TabsTrigger>
-            <TabsTrigger value="security">{t.settings.tabs.security}</TabsTrigger>
-            <TabsTrigger value="notifications">{t.settings.tabs.notifications}</TabsTrigger>
-            <TabsTrigger value="advanced">{t.settings.tabs.advanced}</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="general" className="space-y-6">
-            {/* Theme Settings */}
-            <Card className="bg-card dark:bg-card">
-              <CardHeader>
-                <CardTitle className="text-foreground flex items-center">
-                  <Palette className="mr-2 h-5 w-5" />
-                  {t.settings.general.appearance}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label className="text-foreground">Thème</Label>
-                  <Select value={theme} onValueChange={setTheme}>
-                    <SelectTrigger className="bg-background dark:bg-background">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="light">
-                        <div className="flex items-center">
-                          <Sun className="h-4 w-4 mr-2" />
-                          {t.settings.general.theme.light}
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="dark">
-                        <div className="flex items-center">
-                          <Moon className="h-4 w-4 mr-2" />
-                          {t.settings.general.theme.dark}
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="system">
-                        <div className="flex items-center">
-                          <Monitor className="h-4 w-4 mr-2" />
-                          {t.settings.general.theme.system}
-                        </div>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
+          <div className="flex justify-center mb-8">
+            <TabsList className="bg-[#FFFFFF] dark:bg-[#1C1C1E] backdrop-blur-xl border border-[#E5E5EA] dark:border-[#38383A] shadow-lg rounded-2xl p-2 grid grid-cols-4 w-full max-w-5xl">
+              <TabsTrigger 
+                value="general" 
+                className="!flex !items-center !justify-center !h-[50px] !px-3 !py-0 !leading-none data-[state=active]:bg-[#007AFF] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:bg-transparent data-[state=inactive]:text-[#8E8E93] rounded-xl font-medium text-sm transition-all duration-300 gap-1.5"
+              >
+                <div className="flex items-center justify-center gap-1.5">
+                  <Palette className="h-3.5 w-3.5" />
+                  <span>{t.settings.tabs.general}</span>
                 </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label className="text-foreground">Mode sombre automatique</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Basculer automatiquement selon l'heure (19h-7h)
-                    </p>
-                  </div>
-                  <Switch 
-                    checked={securitySettings.autoThemeEnabled} 
-                    onCheckedChange={(checked) => handleSecuritySettingsChange({ autoThemeEnabled: checked })}
-                  />
+              </TabsTrigger>
+              <TabsTrigger 
+                value="security" 
+                className="!flex !items-center !justify-center !h-[50px] !px-3 !py-0 !leading-none data-[state=active]:bg-[#007AFF] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:bg-transparent data-[state=inactive]:text-[#8E8E93] rounded-xl font-medium text-sm transition-all duration-300 gap-1.5"
+              >
+                <div className="flex items-center justify-center gap-1.5">
+                  <Shield className="h-3.5 w-3.5" />
+                  <span>{t.settings.tabs.security}</span>
                 </div>
-              </CardContent>
-            </Card>
-
-            {/* Focus Mode */}
-            <Card className="bg-card dark:bg-card">
-              <CardHeader>
-                <CardTitle className="text-foreground flex items-center">
-                  {focusMode ? <EyeOff className="mr-2 h-5 w-5" /> : <Eye className="mr-2 h-5 w-5" />}
-                  Mode Focus
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label className="text-foreground">Masquer les soldes</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Cache temporairement tous les montants sensibles
-                    </p>
-                  </div>
-                  <Switch 
-                    checked={focusMode} 
-                    onCheckedChange={handleFocusModeChange}
-                  />
+              </TabsTrigger>
+              <TabsTrigger 
+                value="notifications" 
+                className="!flex !items-center !justify-center !h-[50px] !px-3 !py-0 !leading-none data-[state=active]:bg-[#007AFF] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:bg-transparent data-[state=inactive]:text-[#8E8E93] rounded-xl font-medium text-sm transition-all duration-300 gap-1.5"
+              >
+                <div className="flex items-center justify-center gap-1.5">
+                  <Bell className="h-3.5 w-3.5" />
+                  <span>{t.settings.tabs.notifications}</span>
                 </div>
-                {focusMode && (
-                  <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                    <p className="text-sm text-blue-800 dark:text-blue-200">
-                      🔒 Mode Focus activé - Les montants sont maintenant floutés pour protéger votre confidentialité
-                    </p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Animation Settings */}
-            <Card className="bg-card dark:bg-card">
-              <CardHeader>
-                <CardTitle className="text-foreground flex items-center">
-                  <Zap className="mr-2 h-5 w-5" />
-                  Animations et Performance
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label className="text-foreground">Transitions de pages</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Effet de fondu professionnel (200ms)
-                    </p>
-                  </div>
-                  <Switch 
-                    checked={pageTransitions} 
-                    onCheckedChange={handlePageTransitionsChange}
-                  />
+              </TabsTrigger>
+              <TabsTrigger 
+                value="advanced" 
+                className="!flex !items-center !justify-center !h-[50px] !px-3 !py-0 !leading-none data-[state=active]:bg-[#007AFF] data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:bg-transparent data-[state=inactive]:text-[#8E8E93] rounded-xl font-medium text-sm transition-all duration-300 gap-1.5"
+              >
+                <div className="flex items-center justify-center gap-1.5">
+                  <Zap className="h-3.5 w-3.5" />
+                  <span>{t.settings.tabs.advanced}</span>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Désactiver cette option rend la navigation instantanée pour de meilleures performances
-                </p>
-              </CardContent>
-            </Card>
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
-            {/* Language Settings */}
-            <Card className="bg-card dark:bg-card">
-              <CardHeader>
-                <CardTitle className="text-foreground flex items-center">
-                  <Languages className="mr-2 h-5 w-5" />
-                  {t.settings.general.language}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label className="text-foreground">{t.settings.general.language}</Label>
-                  <Select value={language} onValueChange={setLanguage}>
-                    <SelectTrigger className="bg-background dark:bg-background">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="fr">🇫🇷 Français</SelectItem>
-                      <SelectItem value="en">🇬🇧 English</SelectItem>
-                      <SelectItem value="de">🇩🇪 Deutsch</SelectItem>
-                      <SelectItem value="it">🇮🇹 Italiano</SelectItem>
-                      <SelectItem value="es">🇪🇸 Español</SelectItem>
-                      <SelectItem value="sq">🇦🇱 Shqip</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Currency Settings */}
-            <Card className="bg-card dark:bg-card">
-              <CardHeader>
-                <CardTitle className="text-foreground flex items-center">
-                  <DollarSign className="mr-2 h-5 w-5" />
-                  {t.settings.general.currency}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label className="text-foreground">{t.settings.general.currency}</Label>
-                  <Select value={currency} onValueChange={setCurrency}>
-                    <SelectTrigger className="bg-background dark:bg-background">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="CHF">
-                        <div className="flex items-center">
-                          <span className="mr-2">🇨🇭</span>
-                          CHF - Franc Suisse
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="EUR">
-                        <div className="flex items-center">
-                          <span className="mr-2">🇪🇺</span>
-                          EUR - Euro
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="USD">
-                        <div className="flex items-center">
-                          <span className="mr-2">🇺🇸</span>
-                          USD - Dollar US
-                        </div>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground">
-                    Les prix des cryptomonnaies seront affichés dans cette devise
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* User Profile */}
-            <Card className="bg-card dark:bg-card">
-              <CardHeader>
-                <CardTitle className="text-foreground flex items-center">
-                  <Smartphone className="mr-2 h-5 w-5" />
-                  {t.settings.general.userType}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label className="text-foreground">{t.settings.general.userType}</Label>
-                  <Select value={userType || ""} onValueChange={(value) => onUserTypeChange(value as UserType)}>
-                    <SelectTrigger className="bg-background dark:bg-background">
-                      <SelectValue placeholder="Sélectionnez votre profil" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="client">👤 Particulier</SelectItem>
-                      <SelectItem value="merchant">🏪 Commerçant</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Custom Themes */}
-            <Card className="bg-card dark:bg-card">
-              <CardHeader>
-                <CardTitle className="text-foreground flex items-center">
-                  <Palette className="mr-2 h-5 w-5" />
-                  Thèmes Personnalisés
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label className="text-foreground">Thème personnalisé</Label>
-                  <Select value={customTheme || "default"} onValueChange={handleCustomThemeChange}>
-                    <SelectTrigger className="bg-background dark:bg-background">
-                      <SelectValue placeholder="Sélectionner un thème" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="default">Thème par défaut</SelectItem>
-                      {customThemes.map(theme => (
-                        <SelectItem key={theme.id} value={theme.id}>
-                          {theme.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Connection Status */}
-            <Card className="bg-card dark:bg-card">
-              <CardHeader>
-                <CardTitle className="text-foreground flex items-center">
-                  {isOnline ? <Wifi className="mr-2 h-5 w-5 text-green-500" /> : <WifiOff className="mr-2 h-5 w-5 text-red-500" />}
-                  État de la connexion
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-2">
-                  <Badge variant={isOnline ? "default" : "destructive"}>
-                    {isOnline ? "🟢 En ligne" : "🔴 Hors ligne"}
-                  </Badge>
-                  <p className="text-sm text-muted-foreground">
-                    {isOnline ? "Toutes les fonctionnalités sont disponibles" : "Mode hors ligne - données en cache"}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Save Button */}
-            <Button onClick={saveSettings} className="w-full">
-              {t.common.save} les paramètres
-            </Button>
-          </TabsContent>
-
-          <TabsContent value="security" className="space-y-6">
-            {/* Enhanced Security Settings */}
-            <Card className="bg-card dark:bg-card">
-              <CardHeader>
-                <CardTitle className="text-foreground flex items-center">
-                  <Shield className="mr-2 h-5 w-5" />
-                  Sécurité Avancée
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label className="text-foreground">Verrouillage automatique</Label>
-                    <p className="text-sm text-muted-foreground">Verrouiller l'app après inactivité</p>
-                  </div>
-                  <Switch 
-                    checked={securitySettings.autoLockEnabled} 
-                    onCheckedChange={(checked) => handleSecuritySettingsChange({ autoLockEnabled: checked })}
-                  />
-                </div>
-                
-                {securitySettings.autoLockEnabled && (
-                  <div className="space-y-2">
-                    <Label className="text-foreground">Délai de verrouillage</Label>
-                    <Select 
-                      value={securitySettings.autoLockTime.toString()} 
-                      onValueChange={(value) => handleSecuritySettingsChange({ autoLockTime: parseInt(value) })}
-                    >
-                      <SelectTrigger className="bg-background dark:bg-background">
+          <TabsContent value="general" className="space-y-6 mt-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Apparence */}
+              <Card className="apple-card">
+                <CardHeader className="apple-card-header">
+                  <CardTitle className="apple-card-title text-center">
+                    <div className="p-2 bg-[#F2F2F7] dark:bg-[#2C2C2E] rounded-lg">
+                      <Palette className="h-5 w-5 text-[#007AFF]" />
+                    </div>
+                    Apparence
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="apple-card-content">
+                  <div className="flex items-center justify-between py-3">
+                    <div className="flex-1">
+                      <Label className="text-base font-medium text-[#000000] dark:text-[#FFFFFF]">Thème</Label>
+                      <p className="text-sm text-[#8E8E93] mt-1">Choisissez votre apparence préférée</p>
+                    </div>
+                    <Select value={theme} onValueChange={setTheme}>
+                      <SelectTrigger className="w-40 h-11 bg-[#F2F2F7] dark:bg-[#2C2C2E] border-0 rounded-xl text-[#007AFF]">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="1">1 minute</SelectItem>
-                        <SelectItem value="5">5 minutes</SelectItem>
-                        <SelectItem value="10">10 minutes</SelectItem>
-                        <SelectItem value="30">30 minutes</SelectItem>
+                      <SelectContent className="rounded-xl border-[#E5E5EA] dark:border-[#38383A] bg-[#FFFFFF] dark:bg-[#1C1C1E]">
+                        <SelectItem value="light" className="rounded-lg">
+                          <div className="flex items-center gap-2">
+                            <Sun className="h-4 w-4" />
+                            <span>Clair</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="dark" className="rounded-lg">
+                          <div className="flex items-center gap-2">
+                            <Moon className="h-4 w-4" />
+                            <span>Sombre</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="system" className="rounded-lg">
+                          <div className="flex items-center gap-2">
+                            <Monitor className="h-4 w-4" />
+                            <span>Système</span>
+                          </div>
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
-                )}
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label className="text-foreground">Flou d'écran</Label>
-                    <p className="text-sm text-muted-foreground">Flouter l'écran lors du verrouillage</p>
+
+                  <Separator className="bg-[#E5E5EA] dark:bg-[#38383A]" />
+
+                  <div className="flex items-center justify-between py-3">
+                    <div className="flex-1">
+                      <Label className="text-base font-medium text-[#000000] dark:text-[#FFFFFF]">Mode automatique</Label>
+                      <p className="text-sm text-[#8E8E93] mt-1">Basculement selon l'heure (19h-7h)</p>
+                    </div>
+                    <Switch
+                      checked={securitySettings.autoThemeEnabled}
+                      onCheckedChange={(checked) => handleSecuritySettingsChange({ autoThemeEnabled: checked })}
+                    />
                   </div>
-                  <Switch 
-                    checked={securitySettings.blurOnInactive} 
-                    onCheckedChange={(checked) => handleSecuritySettingsChange({ blurOnInactive: checked })}
-                  />
-                </div>
-                
-                <Separator />
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label className="text-foreground">Authentification biométrique</Label>
-                    <p className="text-sm text-muted-foreground">Utiliser empreinte/Face ID</p>
+                </CardContent>
+              </Card>
+
+              {/* Mode Focus */}
+              <Card className="apple-card">
+                <CardHeader className="apple-card-header">
+                  <CardTitle className="apple-card-title text-center">
+                    <div className="p-2 bg-[#F2F2F7] dark:bg-[#2C2C2E] rounded-lg">
+                      <Eye className="h-5 w-5 text-[#007AFF]" />
+                    </div>
+                    Mode Focus
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="apple-card-content">
+                  <div className="flex items-center justify-between py-3">
+                    <div className="flex-1">
+                      <Label className="text-base font-medium text-[#000000] dark:text-[#FFFFFF]">Masquer les montants</Label>
+                      <p className="text-sm text-[#8E8E93] mt-1">Protection de la confidentialité</p>
+                    </div>
+                    <Switch
+                      checked={focusMode}
+                      onCheckedChange={handleFocusModeChange}
+                    />
                   </div>
-                  <Button variant="outline" onClick={() => setShowBiometricSetup(true)} className="bg-background dark:bg-background">
-                    <Fingerprint className="mr-2 h-4 w-4" />
-                    {securitySettings.biometricEnabled ? 'Configuré' : 'Configurer'}
-                  </Button>
-                </div>
-                
-                <Separator />
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label className="text-foreground">Codes de sauvegarde</Label>
-                    <p className="text-sm text-muted-foreground">
-                      {remainingBackupCodes > 0 ? `${remainingBackupCodes} codes restants` : 'Générer des codes d\'urgence'}
-                    </p>
+                  {focusMode && (
+                    <>
+                      <Separator className="bg-[#E5E5EA] dark:bg-[#38383A]" />
+                      <div className="flex items-center gap-3 py-3">
+                        <div className="p-2 bg-[#34C759]/10 rounded-lg">
+                          <EyeOff className="h-4 w-4 text-[#34C759]" />
+                        </div>
+                        <p className="text-sm font-medium text-[#000000] dark:text-[#FFFFFF]">
+                          Mode Focus activé
+                        </p>
+                      </div>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Performance */}
+              <Card className="apple-card">
+                <CardHeader className="apple-card-header">
+                  <CardTitle className="apple-card-title text-center">
+                    <div className="p-2 bg-[#F2F2F7] dark:bg-[#2C2C2E] rounded-lg">
+                      <Zap className="h-5 w-5 text-[#007AFF]" />
+                    </div>
+                    Performance
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="apple-card-content">
+                  <div className="flex items-center justify-between py-3">
+                    <div className="flex-1">
+                      <Label className="text-base font-medium text-[#000000] dark:text-[#FFFFFF]">Animations fluides</Label>
+                      <p className="text-sm text-[#8E8E93] mt-1">Transitions entre les pages</p>
+                    </div>
+                    <Switch
+                      checked={pageTransitions}
+                      onCheckedChange={handlePageTransitionsChange}
+                    />
                   </div>
-                  <Button variant="outline" onClick={() => setShowBackupCodes(true)} className="bg-background dark:bg-background">
-                    <Key className="mr-2 h-4 w-4" />
-                    {remainingBackupCodes > 0 ? 'Voir codes' : 'Générer'}
-                  </Button>
-                </div>
-                
-                <Separator />
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label className="text-foreground">{t.settings.security.pin}</Label>
-                    <p className="text-sm text-muted-foreground">Modifier votre code PIN</p>
+                </CardContent>
+              </Card>
+
+              {/* Langue */}
+              <Card className="apple-card">
+                <CardHeader className="apple-card-header">
+                  <CardTitle className="apple-card-title text-center">
+                    <div className="p-2 bg-[#F2F2F7] dark:bg-[#2C2C2E] rounded-lg">
+                      <Globe className="h-5 w-5 text-[#007AFF]" />
+                    </div>
+                    Langue
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="apple-card-content">
+                  <div className="flex items-center justify-between py-3">
+                    <div className="flex-1">
+                      <Label className="text-base font-medium text-[#000000] dark:text-[#FFFFFF]">Interface</Label>
+                      <p className="text-sm text-[#8E8E93] mt-1">Langue d'affichage</p>
+                    </div>
+                    <Select value={language} onValueChange={setLanguage}>
+                      <SelectTrigger className="w-40 h-11 bg-[#F2F2F7] dark:bg-[#2C2C2E] border-0 rounded-xl text-[#007AFF]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl border-[#E5E5EA] dark:border-[#38383A] bg-[#FFFFFF] dark:bg-[#1C1C1E]">
+                        <SelectItem value="fr" className="rounded-lg">🇫🇷 Français</SelectItem>
+                        <SelectItem value="en" className="rounded-lg">🇬🇧 English</SelectItem>
+                        <SelectItem value="de" className="rounded-lg">🇩🇪 Deutsch</SelectItem>
+                        <SelectItem value="it" className="rounded-lg">🇮🇹 Italiano</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <Button variant="outline" onClick={onChangePinRequest} className="bg-background dark:bg-background">
-                    <Key className="mr-2 h-4 w-4" />
-                    Changer PIN
-                  </Button>
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label className="text-foreground">{t.settings.security.seedPhrase}</Label>
-                    <p className="text-sm text-muted-foreground">Afficher votre phrase secrète</p>
-                  </div>
-                  <Button variant="outline" onClick={onShowSeedPhrase} className="bg-background dark:bg-background">
-                    <Eye className="mr-2 h-4 w-4" />
-                    Voir phrase
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
-          <TabsContent value="notifications" className="space-y-6">
-            {/* Notifications */}
-            <Card className="bg-card dark:bg-card">
-              <CardHeader>
-                <CardTitle className="text-foreground flex items-center">
-                  <Bell className="mr-2 h-5 w-5" />
-                  {t.settings.tabs.notifications}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label className="text-foreground">Alertes de prix</Label>
-                    <p className="text-sm text-muted-foreground">Notifications des variations de prix</p>
+          <TabsContent value="security" className="space-y-6 mt-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Sécurité Avancée */}
+              <Card className="apple-card">
+                <CardHeader className="apple-card-header">
+                  <CardTitle className="apple-card-title text-center">
+                    <div className="p-2 bg-[#F2F2F7] dark:bg-[#2C2C2E] rounded-lg">
+                      <Shield className="h-5 w-5 text-[#007AFF]" />
+                    </div>
+                    Sécurité Avancée
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="apple-card-content">
+                  <div className="flex items-center justify-between py-3">
+                    <div className="flex-1">
+                      <Label className="text-base font-medium text-[#000000] dark:text-[#FFFFFF]">Verrouillage automatique</Label>
+                      <p className="text-sm text-[#8E8E93] mt-1">Verrouille l'application après inactivité</p>
+                    </div>
+                    <Switch 
+                      checked={securitySettings.autoLockEnabled} 
+                      onCheckedChange={(checked) => handleSecuritySettingsChange({ autoLockEnabled: checked })}
+                    />
                   </div>
-                  <Switch
-                    checked={notifications.priceAlerts}
-                    onCheckedChange={(checked) => setNotifications({ ...notifications, priceAlerts: checked })}
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label className="text-foreground">Transactions</Label>
-                    <p className="text-sm text-muted-foreground">Confirmations de transactions</p>
+                  
+                  <Separator className="bg-[#E5E5EA] dark:bg-[#38383A]" />
+                  
+                  <div className="flex items-center justify-between py-3">
+                    <div className="flex-1">
+                      <Label className="text-base font-medium text-[#000000] dark:text-[#FFFFFF]">Floutage d'écran</Label>
+                      <p className="text-sm text-[#8E8E93] mt-1">Floute l'écran lors du changement d'app</p>
+                    </div>
+                    <Switch 
+                      checked={securitySettings.blurOnInactive} 
+                      onCheckedChange={(checked) => handleSecuritySettingsChange({ blurOnInactive: checked })}
+                    />
                   </div>
-                  <Switch
-                    checked={notifications.transactions}
-                    onCheckedChange={(checked) => setNotifications({ ...notifications, transactions: checked })}
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label className="text-foreground">Sécurité</Label>
-                    <p className="text-sm text-muted-foreground">Alertes de sécurité</p>
+                  
+                  {securitySettings.autoLockEnabled && (
+                    <>
+                      <Separator className="bg-[#E5E5EA] dark:bg-[#38383A]" />
+                      <div className="py-3">
+                        <Label className="text-base font-medium text-[#000000] dark:text-[#FFFFFF] mb-3 block">Délai de verrouillage</Label>
+                        <Select 
+                          value={securitySettings.autoLockTime.toString()} 
+                          onValueChange={(value) => handleSecuritySettingsChange({ autoLockTime: parseInt(value) })}
+                        >
+                          <SelectTrigger className="w-40 h-11 bg-[#F2F2F7] dark:bg-[#2C2C2E] border-0 rounded-xl text-[#007AFF]">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="rounded-xl border-[#E5E5EA] dark:border-[#38383A] bg-[#FFFFFF] dark:bg-[#1C1C1E]">
+                            <SelectItem value="1" className="rounded-lg">1 minute</SelectItem>
+                            <SelectItem value="5" className="rounded-lg">5 minutes</SelectItem>
+                            <SelectItem value="10" className="rounded-lg">10 minutes</SelectItem>
+                            <SelectItem value="30" className="rounded-lg">30 minutes</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Authentification */}
+              <Card className="apple-card">
+                <CardHeader className="apple-card-header">
+                  <CardTitle className="apple-card-title text-center">
+                    <div className="p-2 bg-[#F2F2F7] dark:bg-[#2C2C2E] rounded-lg">
+                      <Fingerprint className="h-5 w-5 text-[#007AFF]" />
+                    </div>
+                    Authentification
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="apple-card-content">
+                  <div className="flex items-center justify-between py-3">
+                    <div className="flex-1 pr-4">
+                      <Label className="text-base font-medium text-[#000000] dark:text-[#FFFFFF]">Biométrie</Label>
+                      <p className="text-sm text-[#8E8E93] mt-1">Empreinte digitale / Face ID</p>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setShowBiometricSetup(true)} 
+                      className="min-w-[120px] bg-[#FFFFFF] dark:bg-[#1C1C1E] border-[#E5E5EA] dark:border-[#38383A] hover:bg-[#F2F2F7] dark:hover:bg-[#2C2C2E] rounded-xl text-[#007AFF] font-medium"
+                    >
+                      <Fingerprint className="mr-2 h-4 w-4" />
+                      {securitySettings.biometricEnabled ? 'Configuré' : 'Configurer'}
+                    </Button>
                   </div>
-                  <Switch
-                    checked={notifications.security}
-                    onCheckedChange={(checked) => setNotifications({ ...notifications, security: checked })}
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label className="text-foreground">Marketing</Label>
-                    <p className="text-sm text-muted-foreground">Offres et promotions</p>
+                  
+                  <Separator className="bg-[#E5E5EA] dark:bg-[#38383A]" />
+                  
+                  <div className="flex items-center justify-between py-3">
+                    <div className="flex-1 pr-4">
+                      <Label className="text-base font-medium text-[#000000] dark:text-[#FFFFFF]">Codes de sauvegarde</Label>
+                      <p className="text-sm text-[#8E8E93] mt-1">
+                        {remainingBackupCodes > 0 ? `${remainingBackupCodes} codes restants` : 'Générer des codes d\'urgence'}
+                      </p>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setShowBackupCodes(true)} 
+                      className="min-w-[120px] bg-[#FFFFFF] dark:bg-[#1C1C1E] border-[#E5E5EA] dark:border-[#38383A] hover:bg-[#F2F2F7] dark:hover:bg-[#2C2C2E] rounded-xl text-[#007AFF] font-medium"
+                    >
+                      <Key className="mr-2 h-4 w-4" />
+                      {remainingBackupCodes > 0 ? 'Voir codes' : 'Générer'}
+                    </Button>
                   </div>
-                  <Switch
-                    checked={notifications.marketing}
-                    onCheckedChange={(checked) => setNotifications({ ...notifications, marketing: checked })}
-                  />
-                </div>
-              </CardContent>
-            </Card>
+                  
+                  <Separator className="bg-[#E5E5EA] dark:bg-[#38383A]" />
+                  
+                  <div className="flex items-center justify-between py-3">
+                    <div className="flex-1 pr-4">
+                      <Label className="text-base font-medium text-[#000000] dark:text-[#FFFFFF]">Code PIN</Label>
+                      <p className="text-sm text-[#8E8E93] mt-1">Modifier votre code de sécurité</p>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      onClick={onChangePinRequest} 
+                      className="min-w-[140px] bg-[#FFFFFF] dark:bg-[#1C1C1E] border-[#E5E5EA] dark:border-[#38383A] hover:bg-[#F2F2F7] dark:hover:bg-[#2C2C2E] rounded-xl text-[#007AFF] font-medium"
+                    >
+                      <Key className="mr-2 h-4 w-4" />
+                      Modifier PIN
+                    </Button>
+                  </div>
+                  
+                  <Separator className="bg-[#E5E5EA] dark:bg-[#38383A]" />
+                  
+                  <div className="flex items-center justify-between py-3">
+                    <div className="flex-1 pr-4">
+                      <Label className="text-base font-medium text-[#000000] dark:text-[#FFFFFF]">Phrase de récupération</Label>
+                      <p className="text-sm text-[#8E8E93] mt-1">Afficher votre seed phrase</p>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      onClick={onShowSeedPhrase} 
+                      className="min-w-[120px] bg-[#FFFFFF] dark:bg-[#1C1C1E] border-[#E5E5EA] dark:border-[#38383A] hover:bg-[#F2F2F7] dark:hover:bg-[#2C2C2E] rounded-xl text-[#007AFF] font-medium"
+                    >
+                      <Eye className="mr-2 h-4 w-4" />
+                      Voir phrase
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
-          <TabsContent value="advanced" className="space-y-6">
-            {/* Backup and Export */}
-            <Card className="bg-card dark:bg-card">
-              <CardHeader>
-                <CardTitle className="text-foreground flex items-center">
-                  <Download className="mr-2 h-5 w-5" />
-                  Sauvegarde et Export
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label className="text-foreground">Exporter le portefeuille</Label>
-                    <p className="text-sm text-muted-foreground">Sauvegarder vos données</p>
+          <TabsContent value="notifications" className="space-y-6 mt-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Notifications */}
+              <Card className="apple-card">
+                <CardHeader className="apple-card-header">
+                  <CardTitle className="apple-card-title text-center">
+                    <div className="p-2 bg-[#F2F2F7] dark:bg-[#2C2C2E] rounded-lg">
+                      <Bell className="h-5 w-5 text-[#007AFF]" />
+                    </div>
+                    Notifications
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="apple-card-content">
+                  <div className="flex items-center justify-between py-3">
+                    <div className="flex-1">
+                      <Label className="text-base font-medium text-[#000000] dark:text-[#FFFFFF]">Alertes de prix</Label>
+                      <p className="text-sm text-[#8E8E93] mt-1">Variations importantes des cryptomonnaies</p>
+                    </div>
+                    <Switch
+                      checked={notifications.priceAlerts}
+                      onCheckedChange={(checked) => setNotifications({ ...notifications, priceAlerts: checked })}
+                    />
                   </div>
-                  <Button variant="outline" onClick={exportWallet} className="bg-background dark:bg-background">
-                    <Download className="mr-2 h-4 w-4" />
-                    Exporter
-                  </Button>
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label className="text-foreground">Exporter sauvegarde</Label>
-                    <p className="text-sm text-muted-foreground">Sauvegarder les paramètres</p>
+                  
+                  <Separator className="bg-[#E5E5EA] dark:bg-[#38383A]" />
+                  
+                  <div className="flex items-center justify-between py-3">
+                    <div className="flex-1">
+                      <Label className="text-base font-medium text-[#000000] dark:text-[#FFFFFF]">Transactions</Label>
+                      <p className="text-sm text-[#8E8E93] mt-1">Confirmations d'envois et réceptions</p>
+                    </div>
+                    <Switch
+                      checked={notifications.transactions}
+                      onCheckedChange={(checked) => setNotifications({ ...notifications, transactions: checked })}
+                    />
                   </div>
-                  <Button variant="outline" onClick={exportBackup} className="bg-background dark:bg-background">
-                    <Upload className="mr-2 h-4 w-4" />
-                    Backup
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                  
+                  <Separator className="bg-[#E5E5EA] dark:bg-[#38383A]" />
+                  
+                  <div className="flex items-center justify-between py-3">
+                    <div className="flex-1">
+                      <Label className="text-base font-medium text-[#000000] dark:text-[#FFFFFF]">Sécurité</Label>
+                      <p className="text-sm text-[#8E8E93] mt-1">Alertes de sécurité importantes</p>
+                    </div>
+                    <Switch
+                      checked={notifications.security}
+                      onCheckedChange={(checked) => setNotifications({ ...notifications, security: checked })}
+                    />
+                  </div>
+                  
+                  <Separator className="bg-[#E5E5EA] dark:bg-[#38383A]" />
+                  
+                  <div className="flex items-center justify-between py-3">
+                    <div className="flex-1">
+                      <Label className="text-base font-medium text-[#000000] dark:text-[#FFFFFF]">Marketing</Label>
+                      <p className="text-sm text-[#8E8E93] mt-1">Promotions et nouveautés</p>
+                    </div>
+                    <Switch
+                      checked={notifications.marketing}
+                      onCheckedChange={(checked) => setNotifications({ ...notifications, marketing: checked })}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="advanced" className="space-y-6 mt-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Sauvegarde et Export */}
+              <Card className="apple-card">
+                <CardHeader className="apple-card-header">
+                  <CardTitle className="apple-card-title text-center">
+                    <div className="p-2 bg-[#F2F2F7] dark:bg-[#2C2C2E] rounded-lg">
+                      <Download className="h-5 w-5 text-[#007AFF]" />
+                    </div>
+                    Sauvegarde
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="apple-card-content">
+                  <div className="flex items-center justify-between py-3">
+                    <div className="flex-1">
+                      <Label className="text-base font-medium text-[#000000] dark:text-[#FFFFFF]">Exporter le portefeuille</Label>
+                      <p className="text-sm text-[#8E8E93] mt-1">Sauvegarder toutes vos données</p>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      onClick={exportWallet} 
+                      className="bg-[#FFFFFF] dark:bg-[#1C1C1E] border-[#E5E5EA] dark:border-[#38383A] hover:bg-[#F2F2F7] dark:hover:bg-[#2C2C2E] rounded-xl text-[#007AFF] font-medium"
+                    >
+                      <Download className="mr-2 h-4 w-4" />
+                      Exporter
+                    </Button>
+                  </div>
+                  
+                  <Separator className="bg-[#E5E5EA] dark:bg-[#38383A]" />
+                  
+                  <div className="flex items-center justify-between py-3">
+                    <div className="flex-1">
+                      <Label className="text-base font-medium text-[#000000] dark:text-[#FFFFFF]">Sauvegarde des paramètres</Label>
+                      <p className="text-sm text-[#8E8E93] mt-1">Exporter votre configuration</p>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      onClick={exportBackup} 
+                      className="bg-[#FFFFFF] dark:bg-[#1C1C1E] border-[#E5E5EA] dark:border-[#38383A] hover:bg-[#F2F2F7] dark:hover:bg-[#2C2C2E] rounded-xl text-[#007AFF] font-medium"
+                    >
+                      <Upload className="mr-2 h-4 w-4" />
+                      Backup
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Support - Agrandi */}
+              <Card className="apple-card">
+                <CardHeader className="apple-card-header">
+                  <CardTitle className="apple-card-title text-center">
+                    <div className="p-2 bg-[#F2F2F7] dark:bg-[#2C2C2E] rounded-lg">
+                      <Mail className="h-5 w-5 text-[#007AFF]" />
+                    </div>
+                    Support & Assistance
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="apple-card-content">
+                  <div className="flex items-center justify-between py-4">
+                    <div className="flex-1">
+                      <Label className="text-lg font-medium text-[#000000] dark:text-[#FFFFFF]">Contacter le support</Label>
+                      <p className="text-sm text-[#8E8E93] mt-2">Équipe d'assistance 24/7 disponible</p>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      onClick={onShowSupport} 
+                      className="bg-[#FFFFFF] dark:bg-[#1C1C1E] border-[#E5E5EA] dark:border-[#38383A] hover:bg-[#F2F2F7] dark:hover:bg-[#2C2C2E] rounded-xl text-[#007AFF] font-medium h-12 px-6"
+                    >
+                      <Mail className="mr-2 h-5 w-5" />
+                      Support
+                    </Button>
+                  </div>
+                  
+                  <Separator className="bg-[#E5E5EA] dark:bg-[#38383A]" />
+                  
+                  <div className="flex items-center justify-between py-4">
+                    <div className="flex-1">
+                      <Label className="text-lg font-medium text-[#000000] dark:text-[#FFFFFF]">Documentation</Label>
+                      <p className="text-sm text-[#8E8E93] mt-2">Guide d'utilisation et FAQ</p>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => window.open('https://docs.cryptowallet.com', '_blank')} 
+                      className="bg-[#FFFFFF] dark:bg-[#1C1C1E] border-[#E5E5EA] dark:border-[#38383A] hover:bg-[#F2F2F7] dark:hover:bg-[#2C2C2E] rounded-xl text-[#007AFF] font-medium h-12 px-6"
+                    >
+                      <FileText className="mr-2 h-5 w-5" />
+                      Documentation
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
 
             {/* TPE Fiscal Reports */}
             {userType === 'merchant' && (
-              <Card className="bg-card dark:bg-card">
-                <CardHeader>
-                  <CardTitle className="text-foreground flex items-center">
-                    <FileText className="mr-2 h-5 w-5" />
-                    Rapports Fiscaux TPE
+              <Card className="apple-card">
+                <CardHeader className="apple-card-header">
+                  <CardTitle className="apple-card-title text-center">
+                    <div className="p-2 bg-[#F2F2F7] dark:bg-[#2C2C2E] rounded-lg">
+                      <FileText className="h-5 w-5 text-[#007AFF]" />
+                    </div>
+                    Rapports Fiscaux
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label className="text-foreground">Rapports fiscaux automatiques</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Générer des déclarations pour vos transactions crypto
-                      </p>
+                <CardContent className="apple-card-content">
+                  <div className="flex items-center justify-between py-3">
+                    <div className="flex-1">
+                      <Label className="text-base font-medium text-[#000000] dark:text-[#FFFFFF]">Déclarations automatiques</Label>
+                      <p className="text-sm text-[#8E8E93] mt-1">Générer vos rapports fiscaux crypto</p>
                     </div>
-                    <Button variant="outline" onClick={() => onNavigate("tpe-fiscal-reports")} className="bg-background dark:bg-background">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => onNavigate("tpe-settings")} 
+                      className="bg-[#FFFFFF] dark:bg-[#1C1C1E] border-[#E5E5EA] dark:border-[#38383A] hover:bg-[#F2F2F7] dark:hover:bg-[#2C2C2E] rounded-xl text-[#007AFF] font-medium"
+                    >
                       <FileText className="mr-2 h-4 w-4" />
-                      Voir rapports
+                      Rapports
                     </Button>
                   </div>
                 </CardContent>
               </Card>
             )}
 
-            {/* Support Section */}
-            <Card className="bg-card dark:bg-card">
-              <CardHeader>
-                <CardTitle className="text-foreground flex items-center">
-                  <Mail className="mr-2 h-5 w-5" />
-                  Support et Assistance
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label className="text-foreground">Contacter le support</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Obtenez de l'aide de notre équipe d'assistance
-                    </p>
+            {/* Zone de Danger */}
+            <Card className="apple-card border-[#FF3B30]/20">
+              <CardHeader className="apple-card-header">
+                <CardTitle className="apple-card-title text-center">
+                  <div className="p-2 bg-[#FF3B30]/10 rounded-lg">
+                    <Trash2 className="h-5 w-5 text-[#FF3B30]" />
                   </div>
-                  <Button variant="outline" onClick={onShowSupport} className="bg-background dark:bg-background">
-                    <Mail className="mr-2 h-4 w-4" />
-                    Support
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Danger Zone */}
-            <Card className="bg-card dark:bg-card border-red-200 dark:border-red-800">
-              <CardHeader>
-                <CardTitle className="text-foreground flex items-center text-red-600">
-                  <Trash2 className="mr-2 h-5 w-5" />
                   Zone de Danger
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="apple-card-content">
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label className="text-foreground text-red-600">Supprimer le portefeuille</Label>
-                        <p className="text-sm text-muted-foreground">
-                          Effacer définitivement toutes les données
-                        </p>
+                    <div className="flex items-center justify-between py-3">
+                      <div className="flex-1">
+                        <Label className="text-base font-medium text-[#FF3B30]">Supprimer le portefeuille</Label>
+                        <p className="text-sm text-[#8E8E93] mt-1">Effacer définitivement toutes les données</p>
                       </div>
-                      <Button variant="destructive">
+                      <Button 
+                        variant="destructive" 
+                        className="bg-[#FF3B30] hover:bg-[#D70015] text-white rounded-xl"
+                      >
                         <Trash2 className="mr-2 h-4 w-4" />
                         Supprimer
                       </Button>
                     </div>
                   </AlertDialogTrigger>
-                  <AlertDialogContent className="bg-background dark:bg-background">
+                  <AlertDialogContent className="bg-[#FFFFFF]/95 dark:bg-[#1C1C1E]/95 backdrop-blur-xl border-[#FF3B30]/20 rounded-3xl">
                     <AlertDialogHeader>
-                      <AlertDialogTitle className="text-foreground">Supprimer le portefeuille</AlertDialogTitle>
-                      <AlertDialogDescription className="text-muted-foreground">
-                        Cette action est irréversible. Toutes vos données seront définitivement supprimées.
-                        Assurez-vous d'avoir sauvegardé votre phrase secrète.
+                      <AlertDialogTitle className="text-[#FF3B30] text-xl font-semibold">Supprimer définitivement le portefeuille</AlertDialogTitle>
+                      <AlertDialogDescription className="text-[#8E8E93] text-base">
+                        ⚠️ Cette action est irréversible. Toutes vos données seront définitivement supprimées.
+                        Assurez-vous d'avoir sauvegardé votre phrase secrète avant de continuer.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel className="bg-background dark:bg-background">Annuler</AlertDialogCancel>
-                      <AlertDialogAction onClick={deleteWallet} className="bg-red-600 hover:bg-red-700">
+                    <AlertDialogFooter className="gap-3">
+                      <AlertDialogCancel className="apple-button-outline">Annuler</AlertDialogCancel>
+                      <AlertDialogAction onClick={deleteWallet} className="bg-[#FF3B30] hover:bg-[#D70015] rounded-xl">
                         Supprimer définitivement
                       </AlertDialogAction>
                     </AlertDialogFooter>

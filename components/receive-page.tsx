@@ -8,10 +8,11 @@ import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ArrowLeft, Copy, Download, Share2, QrCode } from 'lucide-react'
-import { generateCryptoAddress } from "@/lib/wallet-utils"
+import { generateCryptoAddress, formatBalance, formatCryptoAmount } from "@/lib/wallet-utils"
 import { useToast } from "@/hooks/use-toast"
 import { useLanguage } from "@/contexts/language-context"
 import type { AppState } from "@/app/page"
+import { generateQrDataUrl } from "@/lib/qr"
 
 interface ReceivePageProps {
   onNavigate: (page: AppState) => void
@@ -20,10 +21,11 @@ interface ReceivePageProps {
 
 export function ReceivePage({ onNavigate, walletData }: ReceivePageProps) {
   const { t } = useLanguage()
-  const [selectedCrypto, setSelectedCrypto] = useState<"bitcoin" | "ethereum" | "algorand">("bitcoin")
+  const [selectedCrypto, setSelectedCrypto] = useState<"bitcoin" | "ethereum" | "algorand" | "solana" | "usdc_spl">("bitcoin")
   const [amount, setAmount] = useState("")
   const [qrCodeUrl, setQrCodeUrl] = useState("")
   const { toast } = useToast()
+  const [usdcMint, setUsdcMint] = useState("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v")
 
   const cryptoInfo = {
     bitcoin: {
@@ -44,14 +46,26 @@ export function ReceivePage({ onNavigate, walletData }: ReceivePageProps) {
       color: "bg-black",
       address: walletData?.addresses?.algorand || generateCryptoAddress("algorand"),
     },
+    solana: {
+      name: t.crypto.solana,
+      symbol: "SOL",
+      color: "bg-purple-600",
+      address: (walletData as any)?.addresses?.solana || generateCryptoAddress("solana"),
+    },
+    usdc_spl: {
+      name: "USDC (Solana)",
+      symbol: "USDC",
+      color: "bg-green-600",
+      address: (walletData as any)?.addresses?.solana || generateCryptoAddress("solana"),
+    },
   }
 
   useEffect(() => {
     generateQRCode()
-  }, [selectedCrypto, amount])
+  }, [selectedCrypto, amount, usdcMint])
 
   const generateQRCode = () => {
-    const crypto = cryptoInfo[selectedCrypto]
+    const crypto = (cryptoInfo as any)[selectedCrypto]
     let qrData = crypto.address
 
     // Créer une URI standard pour chaque crypto avec montant optionnel
@@ -66,12 +80,19 @@ export function ReceivePage({ onNavigate, walletData }: ReceivePageProps) {
         case "algorand":
           qrData = `algorand:${crypto.address}?amount=${Number.parseFloat(amount) * 1e6}` // microAlgos
           break
+        case "solana":
+          // Solana Pay URI pour SOL
+          qrData = `solana:${crypto.address}?amount=${amount}&label=CryptoPay%20Pro`
+          break
+        case "usdc_spl":
+          // Solana Pay URI pour USDC SPL (6 décimales)
+          qrData = `solana:${crypto.address}?amount=${amount}&spl-token=${usdcMint}&label=CryptoPay%20Pro`
+          break
       }
     }
 
-    // Utiliser l'API QR Server pour générer un vrai QR code
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrData)}`
-    setQrCodeUrl(qrUrl)
+    // Génération locale (data URL)
+    generateQrDataUrl(qrData, 300).then(setQrCodeUrl)
   }
 
   const copyToClipboard = async (text: string, label: string) => {
@@ -126,12 +147,16 @@ export function ReceivePage({ onNavigate, walletData }: ReceivePageProps) {
     <div className="min-h-screen bg-background p-4">
       <div className="max-w-md mx-auto space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <Button variant="ghost" size="icon" onClick={() => onNavigate("dashboard")}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <h1 className="text-xl font-semibold">{t.receive.title}</h1>
-          <div className="w-10" />
+        <div className="flex items-center justify-between pb-4 border-b border-[#E5E5EA] dark:border-[#38383A]">
+          <button
+            onClick={() => onNavigate("dashboard")}
+            className="btn-icon"
+            aria-label="Retour au tableau de bord"
+          >
+            <ArrowLeft className="h-5 w-5 text-[#007AFF]" />
+          </button>
+          <h1 className="text-xl font-semibold text-[#000000] dark:text-[#FFFFFF]">{t.receive.title}</h1>
+          <div className="w-11" />
         </div>
 
         {/* Crypto Selection */}
@@ -140,6 +165,8 @@ export function ReceivePage({ onNavigate, walletData }: ReceivePageProps) {
             <TabsTrigger value="bitcoin">BTC</TabsTrigger>
             <TabsTrigger value="ethereum">ETH</TabsTrigger>
             <TabsTrigger value="algorand">ALGO</TabsTrigger>
+            <TabsTrigger value="solana">SOL</TabsTrigger>
+            <TabsTrigger value="usdc_spl">USDC</TabsTrigger>
           </TabsList>
 
           <TabsContent value={selectedCrypto} className="space-y-6">
@@ -155,6 +182,20 @@ export function ReceivePage({ onNavigate, walletData }: ReceivePageProps) {
                 <Badge variant="secondary">{currentCrypto.symbol}</Badge>
               </CardHeader>
             </Card>
+
+            {selectedCrypto === 'usdc_spl' && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Mint USDC</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <Label htmlFor="mint">Adresse mint (mainnet)</Label>
+                    <Input id="mint" value={usdcMint} onChange={(e) => setUsdcMint(e.target.value)} />
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Amount Input (Optional) */}
             <Card>
@@ -198,35 +239,42 @@ export function ReceivePage({ onNavigate, walletData }: ReceivePageProps) {
                   />
                 </div>
 
-                <div className="flex gap-2 justify-center">
-                  <Button variant="outline" size="sm" onClick={downloadQRCode}>
-                    <Download className="mr-2 h-4 w-4" />
-                    {t.common.download}
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={shareQRCode}>
-                    <Share2 className="mr-2 h-4 w-4" />
-                    {t.common.share}
-                  </Button>
+                <div className="flex gap-3 justify-center">
+                  <button
+                    className="btn-secondary flex-1"
+                    onClick={downloadQRCode}
+                  >
+                    <Download className="h-4 w-4" />
+                    <span>{t.common.download}</span>
+                  </button>
+                  <button
+                    className="btn-secondary flex-1"
+                    onClick={shareQRCode}
+                  >
+                    <Share2 className="h-4 w-4" />
+                    <span>{t.common.share}</span>
+                  </button>
                 </div>
               </CardContent>
             </Card>
 
             {/* Address */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">{t.receive.receiveAddress}</CardTitle>
+            <Card className="apple-card">
+              <CardHeader className="apple-card-header">
+                <CardTitle className="apple-card-title">{t.receive.receiveAddress}</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="p-3 bg-muted rounded-lg break-all text-sm font-mono">{currentCrypto.address}</div>
-                  <Button
-                    variant="outline"
-                    className="w-full bg-transparent"
+              <CardContent className="apple-card-content">
+                <div className="space-y-4">
+                  <div className="p-4 bg-[#F2F2F7] dark:bg-[#2C2C2E] rounded-xl break-all text-sm font-mono text-[#000000] dark:text-[#FFFFFF]">
+                    {currentCrypto.address}
+                  </div>
+                  <button
+                    className="btn-primary w-full"
                     onClick={() => copyToClipboard(currentCrypto.address, "Adresse")}
                   >
-                    <Copy className="mr-2 h-4 w-4" />
-                    {t.receive.copyAddress}
-                  </Button>
+                    <Copy className="h-4 w-4" />
+                    <span>{t.receive.copyAddress}</span>
+                  </button>
                 </div>
               </CardContent>
             </Card>

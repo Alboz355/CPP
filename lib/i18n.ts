@@ -36,6 +36,12 @@ export interface Translations {
     update: string
     remove: string
   }
+  // Language selection (flat keys used by component)
+  chooseLanguage: string
+  selectAppLanguage: string
+  selectLanguage: string
+  languageWillBeUsed: string
+  continueIn: string
 
   // Navigation
   navigation: {
@@ -368,6 +374,7 @@ export interface Translations {
     bitcoin: string
     ethereum: string
     algorand: string
+    solana: string
   }
 
   // Time and dates
@@ -450,6 +457,11 @@ export const translations: Record<Language, Translations> = {
       update: "Mettre à jour",
       remove: "Supprimer",
     },
+    chooseLanguage: "Choisissez votre langue",
+    selectAppLanguage: "Sélectionnez la langue de l'application",
+    selectLanguage: "Sélectionner la langue",
+    languageWillBeUsed: "Cette langue sera utilisée dans toute l'application.",
+    continueIn: "Continuer en",
     navigation: {
       dashboard: "Tableau de bord",
       send: "Envoyer",
@@ -760,6 +772,7 @@ export const translations: Record<Language, Translations> = {
       bitcoin: "Bitcoin",
       ethereum: "Ethereum",
       algorand: "Algorand",
+      solana: "Solana",
     },
     time: {
       ago: "il y a",
@@ -836,6 +849,11 @@ export const translations: Record<Language, Translations> = {
       update: "Update",
       remove: "Remove",
     },
+    chooseLanguage: "Choose your language",
+    selectAppLanguage: "Select the app language",
+    selectLanguage: "Select language",
+    languageWillBeUsed: "This language will be used throughout the app.",
+    continueIn: "Continue in",
     navigation: {
       dashboard: "Dashboard",
       send: "Send",
@@ -1146,6 +1164,7 @@ export const translations: Record<Language, Translations> = {
       bitcoin: "Bitcoin",
       ethereum: "Ethereum",
       algorand: "Algorand",
+      solana: "Solana",
     },
     time: {
       ago: "ago",
@@ -1222,6 +1241,11 @@ export const translations: Record<Language, Translations> = {
       update: "Aktualisieren",
       remove: "Entfernen",
     },
+    chooseLanguage: "Wählen Sie Ihre Sprache",
+    selectAppLanguage: "Wählen Sie die App-Sprache",
+    selectLanguage: "Sprache auswählen",
+    languageWillBeUsed: "Diese Sprache wird in der gesamten App verwendet.",
+    continueIn: "Fortfahren in",
     navigation: {
       dashboard: "Dashboard",
       send: "Senden",
@@ -1533,6 +1557,7 @@ export const translations: Record<Language, Translations> = {
       bitcoin: "Bitcoin",
       ethereum: "Ethereum",
       algorand: "Algorand",
+      solana: "Solana",
     },
     time: {
       ago: "vor",
@@ -1609,6 +1634,11 @@ export const translations: Record<Language, Translations> = {
       update: "Aggiorna",
       remove: "Rimuovi",
     },
+    chooseLanguage: "Scegli la tua lingua",
+    selectAppLanguage: "Seleziona la lingua dell'app",
+    selectLanguage: "Seleziona lingua",
+    languageWillBeUsed: "Questa lingua sarà utilizzata in tutta l'app.",
+    continueIn: "Continua in",
     navigation: {
       dashboard: "Dashboard",
       send: "Invia",
@@ -1919,6 +1949,7 @@ export const translations: Record<Language, Translations> = {
       bitcoin: "Bitcoin",
       ethereum: "Ethereum",
       algorand: "Algorand",
+      solana: "Solana",
     },
     time: {
       ago: "fa",
@@ -1995,6 +2026,11 @@ export const translations: Record<Language, Translations> = {
       update: "Actualizar",
       remove: "Eliminar",
     },
+    chooseLanguage: "Elige tu idioma",
+    selectAppLanguage: "Selecciona el idioma de la app",
+    selectLanguage: "Seleccionar idioma",
+    languageWillBeUsed: "Este idioma se usará en toda la aplicación.",
+    continueIn: "Continuar en",
     navigation: {
       dashboard: "Panel",
       send: "Enviar",
@@ -2305,6 +2341,7 @@ export const translations: Record<Language, Translations> = {
       bitcoin: "Bitcoin",
       ethereum: "Ethereum",
       algorand: "Algorand",
+      solana: "Solana",
     },
     time: {
       ago: "hace",
@@ -2381,6 +2418,11 @@ export const translations: Record<Language, Translations> = {
       update: "Përditëso",
       remove: "Hiq",
     },
+    chooseLanguage: "Zgjidh gjuhën tënde",
+    selectAppLanguage: "Zgjidh gjuhën e aplikacionit",
+    selectLanguage: "Zgjidh gjuhën",
+    languageWillBeUsed: "Kjo gjuhë do të përdoret në gjithë aplikacionin.",
+    continueIn: "Vazhdo në",
     navigation: {
       dashboard: "Paneli",
       send: "Dërgo",
@@ -2691,6 +2733,7 @@ export const translations: Record<Language, Translations> = {
       bitcoin: "Bitcoin",
       ethereum: "Ethereum",
       algorand: "Algorand",
+      solana: "Solana",
     },
     time: {
       ago: "më parë",
@@ -2736,4 +2779,21 @@ export const translations: Record<Language, Translations> = {
 
 export function getTranslation(language: Language): Translations {
   return translations[language] || translations.fr
+}
+
+export interface LanguageInfo { code: Language; flag: string; nativeName: string; name: string }
+
+export function getSupportedLanguages(): LanguageInfo[] {
+  return [
+    { code: 'fr', flag: '🇫🇷', nativeName: 'Français', name: 'French' },
+    { code: 'en', flag: '🇬🇧', nativeName: 'English', name: 'English' },
+    { code: 'de', flag: '🇩🇪', nativeName: 'Deutsch', name: 'German' },
+    { code: 'it', flag: '🇮🇹', nativeName: 'Italiano', name: 'Italian' },
+    { code: 'es', flag: '🇪🇸', nativeName: 'Español', name: 'Spanish' },
+    { code: 'sq', flag: '🇦🇱', nativeName: 'Shqip', name: 'Albanian' },
+  ]
+}
+
+export function getTranslations(language: Language): Translations {
+  return getTranslation(language)
 }

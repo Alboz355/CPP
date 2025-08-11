@@ -1,21 +1,24 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Send, Download, ShoppingCart, CreditCard, Bell, Settings, ArrowUpRight, ArrowDownLeft, Clock, CheckCircle, XCircle, TrendingUp, TrendingDown, DollarSign, Target, Users, BarChart3, Eye, EyeOff } from 'lucide-react'
+import { Send, Download, ShoppingCart, CreditCard, Bell, Settings, ArrowUpRight, ArrowDownLeft, Clock, CheckCircle, XCircle, TrendingUp, TrendingDown, DollarSign, Target, Users, BarChart3, Eye, EyeOff, Loader2 } from 'lucide-react'
 import { useLanguage } from '@/contexts/language-context'
 import { getTranslation } from '@/lib/i18n'
+import { formatBalance, formatCryptoAmount } from '@/lib/wallet-utils'
 import { CryptoList } from './crypto-list'
 import { RealTimePrices } from './real-time-prices'
+import type { AppState } from '@/app/page'
+import type { UserType } from '@/components/onboarding-page'
 
 interface MainDashboardProps {
-  userType: 'individual' | 'business'
-  onNavigate: (page: string) => void
+  userType: UserType | 'individual' | 'business' | null
+  onNavigate: (page: AppState) => void
   walletData?: any
   onShowMtPelerin?: () => void
   onShowPriceAlert?: () => void
@@ -26,9 +29,15 @@ export function MainDashboard({ userType, onNavigate, walletData, onShowMtPeleri
   const t = getTranslation(language)
 
   const [focusMode, setFocusMode] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+
+  // Helper function to check if user is business/merchant
+  const isBusinessUser = userType === 'business' || userType === 'merchant'
 
   useEffect(() => {
     const savedFocusMode = localStorage.getItem("focus-mode")
+    
     if (savedFocusMode) {
       const focusModeEnabled = JSON.parse(savedFocusMode)
       setFocusMode(focusModeEnabled)
@@ -38,10 +47,18 @@ export function MainDashboard({ userType, onNavigate, walletData, onShowMtPeleri
       } else {
         document.body.classList.remove('focus-mode')
       }
+    } else {
+      // Si pas de préférence sauvegardée, s'assurer que le mode focus est désactivé
+      setFocusMode(false)
+      document.body.classList.remove('focus-mode')
     }
+    
+    // Simulate initial loading
+    const timer = setTimeout(() => setIsLoading(false), 800)
+    return () => clearTimeout(timer)
   }, [])
 
-  const toggleFocusMode = () => {
+  const toggleFocusMode = useCallback(() => {
     const newFocusMode = !focusMode
     setFocusMode(newFocusMode)
     localStorage.setItem("focus-mode", JSON.stringify(newFocusMode))
@@ -52,49 +69,68 @@ export function MainDashboard({ userType, onNavigate, walletData, onShowMtPeleri
     } else {
       document.body.classList.remove('focus-mode')
     }
-  }
+  }, [focusMode])
   
-  const [totalBalance] = useState(12847.32)
-  const [monthlyChange] = useState(8.5)
-  const [monthlyTransactions] = useState(47)
-  const [monthlyVolume] = useState(8420.50)
-  const [monthlyGoal] = useState(75)
-  const [clientsCount] = useState(156)
-
-  const recentTransactions = [
-    {
-      id: '1',
-      type: 'received' as const,
-      crypto: 'BTC',
-      amount: 0.0234,
-      value: 1250.00,
-      from: '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa',
-      timestamp: new Date(Date.now() - 1000 * 60 * 30),
-      status: 'completed' as const
-    },
-    {
-      id: '2',
-      type: 'sent' as const,
-      crypto: 'ETH',
-      amount: 0.85,
-      value: 2100.00,
-      to: '0x742d35Cc6634C0532925a3b8D4C0C8b3C2e1e3e3',
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2),
-      status: 'completed' as const
-    },
-    {
-      id: '3',
-      type: 'received' as const,
-      crypto: 'ALGO',
-      amount: 500,
-      value: 125.00,
-      from: 'ALGO1234567890ABCDEF',
-      timestamp: new Date(Date.now() - 1000 * 60 * 60 * 6),
-      status: 'pending' as const
+  // Utiliser les vraies données du wallet
+  const dashboardData = useMemo(() => {
+    const btcBalance = walletData?.balances?.bitcoin || 0
+    const ethBalance = walletData?.balances?.ethereum || 0
+    const algoBalance = walletData?.balances?.algorand || 0
+    const solBalance = walletData?.balances?.solana || 0
+    
+    // Calculer le total en CHF (vous pouvez utiliser les vrais taux de change)
+    const totalBalance = btcBalance + ethBalance + algoBalance + solBalance
+    
+    return {
+      totalBalance,
+      monthlyChange: 0, // Sera calculé avec l'historique réel
+      monthlyTransactions: 0,
+      monthlyVolume: 0,
+      monthlyGoal: 0,
+      clientsCount: 0
     }
-  ]
+  }, [walletData])
 
-  const formatTimeAgo = (date: Date) => {
+  interface Transaction {
+    id: string
+    type: 'received' | 'sent'
+    crypto: string
+    amount: number | string
+    value: number
+    from?: string
+    to?: string
+    timestamp: Date
+    status: 'completed' | 'pending' | 'failed'
+  }
+
+  const recentTransactions = useMemo((): Transaction[] => {
+    // Récupérer les vraies transactions depuis localStorage
+    try {
+      const history = localStorage.getItem('transaction-history')
+      if (history) {
+        const parsed = JSON.parse(history)
+        // Prendre les 3 dernières transactions
+        return parsed
+          .slice(0, 3)
+          .map((tx: any) => ({
+            ...tx,
+            timestamp: new Date(tx.timestamp)
+          }))
+      }
+    } catch (error) {
+      console.error('Error loading recent transactions:', error)
+    }
+    return []
+  }, [])
+
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true)
+    // Simulate refresh
+    await new Promise(resolve => setTimeout(resolve, 1500))
+    setIsRefreshing(false)
+  }, [])
+
+  const formatTimeAgo = useCallback((date: Date) => {
     const now = new Date()
     const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60))
     
@@ -107,22 +143,22 @@ export function MainDashboard({ userType, onNavigate, walletData, onShowMtPeleri
       const days = Math.floor(diffInMinutes / 1440)
       return `${days} ${days === 1 ? t.time.day : t.time.days} ${t.time.ago}`
     }
-  }
+  }, [t.time])
 
-  const getStatusIcon = (status: string) => {
+  const getStatusIcon = useCallback((status: string) => {
     switch (status) {
       case 'completed':
-        return <CheckCircle className="h-4 w-4 text-green-500" />
+        return <CheckCircle className="h-4 w-4 text-[#34C759]" />
       case 'pending':
-        return <Clock className="h-4 w-4 text-yellow-500" />
+        return <Clock className="h-4 w-4 text-[#FF9500]" />
       case 'failed':
-        return <XCircle className="h-4 w-4 text-red-500" />
+        return <XCircle className="h-4 w-4 text-[#FF3B30]" />
       default:
-        return <Clock className="h-4 w-4 text-gray-500" />
+        return <Clock className="h-4 w-4 text-[#8E8E93]" />
     }
-  }
+  }, [])
 
-  const getStatusText = (status: string) => {
+  const getStatusText = useCallback((status: string) => {
     switch (status) {
       case 'completed':
         return t.dashboard.transactions.completed
@@ -133,163 +169,197 @@ export function MainDashboard({ userType, onNavigate, walletData, onShowMtPeleri
       default:
         return status
     }
-  }
+  }, [t.dashboard.transactions])
 
   return (
-    <div className="min-h-screen bg-background ios-content-safe">
+    <div className="min-h-screen bg-[#F2F2F7] dark:bg-[#000000] ios-content-safe" role="main" aria-label="Tableau de bord principal">
       {/* Focus Mode Toggle */}
       <button
         onClick={toggleFocusMode}
-        className="focus-mode-toggle"
+        className="focus-mode-toggle apple-press"
         title={focusMode ? "Désactiver le mode focus" : "Activer le mode focus"}
+        aria-label={focusMode ? "Désactiver le mode focus" : "Activer le mode focus"}
+        aria-pressed={focusMode}
+        aria-describedby="focus-mode-description"
       >
-        {focusMode ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+        {focusMode ? <EyeOff className="h-5 w-5" aria-hidden="true" /> : <Eye className="h-5 w-5" aria-hidden="true" />}
       </button>
+      <div id="focus-mode-description" className="sr-only">
+        {focusMode ? "Mode focus activé - Les montants sont masqués" : "Mode focus désactivé - Les montants sont visibles"}
+      </div>
 
       <div className="container mx-auto p-4 space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between ios-header-safe">
+        {/* Header Style Apple */}
+        <header className="flex items-center justify-between ios-header-safe" role="banner">
           <div>
-            <h1 className="text-3xl font-bold">
-              {userType === 'business' ? t.dashboard.professionalTitle : t.dashboard.title}
+            <h1 className="text-3xl font-semibold text-[#000000] dark:text-[#FFFFFF]" id="dashboard-title">
+              {isBusinessUser ? t.dashboard.professionalTitle : t.dashboard.title}
             </h1>
-            <p className="text-muted-foreground">
-              {userType === 'business' ? t.dashboard.professionalSubtitle : t.dashboard.subtitle}
+            <p className="text-[#8E8E93] mt-1" id="dashboard-subtitle">
+              {isBusinessUser ? t.dashboard.professionalSubtitle : t.dashboard.subtitle}
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" onClick={() => onShowPriceAlert && onShowPriceAlert()}>
-              <Bell className="h-4 w-4" />
-            </Button>
-            <Button variant="outline" size="icon" onClick={() => onNavigate('settings')}>
-              <Settings className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-
-        {/* Balance Card */}
-        <Card className="bg-gradient-to-r from-blue-600 to-purple-600 text-white card-hover">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-blue-100 mb-2">{t.dashboard.totalBalance}</p>
-                <p className={`text-3xl font-bold balance-amount ${focusMode ? 'sensitive-data' : ''}`}>
-                  CHF {totalBalance.toLocaleString('fr-CH', { minimumFractionDigits: 2 })}
-                </p>
-                <div className="flex items-center gap-2 mt-2">
-                  {monthlyChange >= 0 ? (
-                    <TrendingUp className="h-4 w-4 text-green-300" />
-                  ) : (
-                    <TrendingDown className="h-4 w-4 text-red-300" />
-                  )}
-                  <span className={`text-sm ${monthlyChange >= 0 ? 'text-green-300' : 'text-red-300'}`}>
-                    {monthlyChange >= 0 ? '+' : ''}{monthlyChange}% {t.time.thisMonth}
-                  </span>
-                </div>
-              </div>
-              <div className="text-right">
-                <Avatar className="h-12 w-12 mb-2">
-                  <AvatarImage src="/placeholder-user.jpg" />
-                  <AvatarFallback>CW</AvatarFallback>
-                </Avatar>
-              </div>
+          <div className="flex items-center gap-3" role="toolbar" aria-label="Actions rapides">
+            <button
+              onClick={() => onShowPriceAlert && onShowPriceAlert()} 
+              className="btn-icon"
+              aria-label="Alertes de prix"
+              aria-describedby="price-alert-description"
+            >
+              <Bell className="h-5 w-5 text-[#007AFF]" aria-hidden="true" />
+            </button>
+            <div id="price-alert-description" className="sr-only">
+              Ouvrir les alertes de prix pour configurer des notifications
             </div>
-          </CardContent>
-        </Card>
+            <button
+              onClick={() => onNavigate('settings')} 
+              className="btn-icon"
+              aria-label="Paramètres"
+              aria-describedby="settings-description"
+            >
+              <Settings className="h-5 w-5 text-[#007AFF]" aria-hidden="true" />
+            </button>
+            <div id="settings-description" className="sr-only">
+              Ouvrir les paramètres de l'application
+            </div>
+          </div>
+        </header>
 
-        {/* Quick Actions */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Button 
-            variant="outline" 
-            className="h-20 flex-col gap-2 card-hover button-press btn-enhanced"
+        {/* Loading State Style Apple */}
+        {isLoading && (
+          <Card className="apple-card" role="status" aria-live="polite">
+            <CardContent className="p-8">
+              <div className="flex items-center justify-center space-x-3">
+                <Loader2 className="h-6 w-6 animate-spin text-[#007AFF]" aria-hidden="true" />
+                <span className="text-[#000000] dark:text-[#FFFFFF] font-medium">Chargement des données...</span>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Balance Card Style Apple */}
+        {!isLoading && (
+          <Card className="apple-card balance-card bg-[#FFFFFF] dark:bg-[#1C1C1E] border border-[#E5E5EA] dark:border-[#38383A] shadow-lg apple-hover" role="region" aria-labelledby="balance-title">
+            <CardContent className="p-8">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-[#8E8E93] mb-2 text-sm font-medium" id="balance-title">{t.dashboard.totalBalance}</p>
+                  <p className={`text-4xl font-bold balance-display ${dashboardData.totalBalance === 0 ? 'balance-zero' : 'balance-positive'} ${focusMode ? 'sensitive-data' : ''}`} 
+                     aria-live="polite">
+                    CHF {dashboardData.totalBalance === 0 ? '0' : dashboardData.totalBalance.toLocaleString('fr-CH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </p>
+                  <div className="flex items-center gap-2 mt-3" role="status" aria-live="polite">
+                    {dashboardData.monthlyChange >= 0 ? (
+                      <TrendingUp className="h-4 w-4 text-[#34C759]" aria-hidden="true" />
+                    ) : (
+                      <TrendingDown className="h-4 w-4 text-[#FF3B30]" aria-hidden="true" />
+                    )}
+                    <span className="text-sm text-[#8E8E93] font-medium">
+                      {dashboardData.monthlyChange >= 0 ? '+' : ''}{dashboardData.monthlyChange}% {t.time.thisMonth}
+                    </span>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <Avatar className="h-16 w-16 mb-2 border-2 border-[#E5E5EA] dark:border-[#38383A]">
+                    <AvatarImage src="/placeholder-user.jpg" alt="Photo de profil utilisateur" />
+                    <AvatarFallback className="bg-[#F2F2F7] dark:bg-[#2C2C2E] text-[#000000] dark:text-[#FFFFFF] font-semibold">CW</AvatarFallback>
+                  </Avatar>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Quick Actions Style Apple */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4" role="group" aria-label="Actions rapides">
+          <button
+            className="btn-action"
             onClick={() => onNavigate('send')}
+            aria-label={`${t.dashboard.quickActions.send} - Envoyer des cryptomonnaies`}
           >
-            <Send className="h-6 w-6" />
-            <span>{t.dashboard.quickActions.send}</span>
-          </Button>
-          <Button 
-            variant="outline" 
-            className="h-20 flex-col gap-2 card-hover button-press btn-enhanced"
+            <Send className="h-8 w-8 text-[#007AFF]" aria-hidden="true" />
+            <span className="font-medium text-[#000000] dark:text-[#FFFFFF]">{t.dashboard.quickActions.send}</span>
+          </button>
+          <button
+            className="btn-action"
             onClick={() => onNavigate('receive')}
+            aria-label={`${t.dashboard.quickActions.receive} - Recevoir des cryptomonnaies`}
           >
-            <Download className="h-6 w-6" />
-            <span>{t.dashboard.quickActions.receive}</span>
-          </Button>
-          <Button 
-            variant="outline" 
-            className="h-20 flex-col gap-2 card-hover button-press btn-enhanced"
+            <Download className="h-8 w-8 text-[#007AFF]" aria-hidden="true" />
+            <span className="font-medium text-[#000000] dark:text-[#FFFFFF]">{t.dashboard.quickActions.receive}</span>
+          </button>
+          <button
+            className="btn-action"
             onClick={() => onShowMtPelerin && onShowMtPelerin()}
+            aria-label={`${t.dashboard.quickActions.buy} - Acheter des cryptomonnaies`}
           >
-            <ShoppingCart className="h-6 w-6" />
-            <span>{t.dashboard.quickActions.buy}</span>
-          </Button>
-          <Button 
-            variant="outline" 
-            className="h-20 flex-col gap-2 card-hover button-press btn-enhanced"
+            <ShoppingCart className="h-8 w-8 text-[#007AFF]" aria-hidden="true" />
+            <span className="font-medium text-[#000000] dark:text-[#FFFFFF]">{t.dashboard.quickActions.buy}</span>
+          </button>
+          <button
+            className="btn-action"
             onClick={() => onNavigate('tpe')}
+            aria-label={`${t.dashboard.quickActions.tpeMode} - Mode terminal de paiement`}
           >
-            <CreditCard className="h-6 w-6" />
-            <span>{t.dashboard.quickActions.tpeMode}</span>
-          </Button>
+            <CreditCard className="h-8 w-8 text-[#007AFF]" aria-hidden="true" />
+            <span className="font-medium text-[#000000] dark:text-[#FFFFFF]">{t.dashboard.quickActions.tpeMode}</span>
+          </button>
         </div>
 
-        {/* Statistics Cards for Business Users */}
-        {userType === 'business' && (
+        {/* Statistics Cards for Business Users Style Apple */}
+        {isBusinessUser && (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Card>
-              <CardContent className="p-4">
+            <Card className="apple-card">
+              <CardContent className="p-6">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
-                    <BarChart3 className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  <div className="p-3 bg-[#007AFF]/10 rounded-xl">
+                    <BarChart3 className="h-6 w-6 text-[#007AFF]" />
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">{t.dashboard.statistics.monthlyTransactions}</p>
-                    <p className="text-2xl font-bold">{monthlyTransactions}</p>
+                    <p className="text-sm text-[#8E8E93]">{t.dashboard.statistics.monthlyTransactions}</p>
+                    <p className="text-2xl font-bold text-[#000000] dark:text-[#FFFFFF]">{dashboardData.monthlyTransactions}</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
             
-            <Card>
-              <CardContent className="p-4">
+            <Card className="apple-card">
+              <CardContent className="p-6">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg">
-                    <DollarSign className="h-5 w-5 text-green-600 dark:text-green-400" />
+                  <div className="p-3 bg-[#34C759]/10 rounded-xl">
+                    <DollarSign className="h-6 w-6 text-[#34C759]" />
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">{t.dashboard.statistics.volumeExchanged}</p>
-                    <p className="text-2xl font-bold">CHF {monthlyVolume.toLocaleString('fr-CH')}</p>
+                    <p className="text-sm text-[#8E8E93]">{t.dashboard.statistics.volumeExchanged}</p>
+                    <p className="text-2xl font-bold text-[#000000] dark:text-[#FFFFFF]">CHF {dashboardData.monthlyVolume.toLocaleString('fr-CH')}</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
             
-            <Card>
-              <CardContent className="p-4">
+            <Card className="apple-card">
+              <CardContent className="p-6">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg">
-                    <Users className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                  <div className="p-3 bg-[#FF9500]/10 rounded-xl">
+                    <Target className="h-6 w-6 text-[#FF9500]" />
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">{t.tpe.stats.clients}</p>
-                    <p className="text-2xl font-bold">{clientsCount}</p>
+                    <p className="text-sm text-[#8E8E93]">{t.dashboard.statistics.monthlyGoal}</p>
+                    <p className="text-2xl font-bold text-[#000000] dark:text-[#FFFFFF]">{dashboardData.monthlyGoal}%</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
             
-            <Card>
-              <CardContent className="p-4">
+            <Card className="apple-card">
+              <CardContent className="p-6">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-orange-100 dark:bg-orange-900 rounded-lg">
-                    <Target className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                  <div className="p-3 bg-[#AF52DE]/10 rounded-xl">
+                    <Users className="h-6 w-6 text-[#AF52DE]" />
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">{t.dashboard.statistics.monthlyGoal}</p>
-                    <div className="flex items-center gap-2">
-                      <Progress value={monthlyGoal} className="flex-1" />
-                      <span className="text-sm font-medium">{monthlyGoal}%</span>
-                    </div>
+                    <p className="text-sm text-[#8E8E93]">Clients</p>
+                    <p className="text-2xl font-bold text-[#000000] dark:text-[#FFFFFF]">{dashboardData.clientsCount}</p>
                   </div>
                 </div>
               </CardContent>
@@ -298,57 +368,72 @@ export function MainDashboard({ userType, onNavigate, walletData, onShowMtPeleri
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Portfolio */}
-          <Card className="card-hover">
-            <CardHeader>
-              <CardTitle>{t.dashboard.portfolio}</CardTitle>
+          {/* Portfolio Style Apple */}
+          <Card className="apple-card">
+            <CardHeader className="apple-card-header">
+              <CardTitle className="apple-card-title">
+                <div className="p-2 bg-[#F2F2F7] dark:bg-[#2C2C2E] rounded-lg">
+                  <BarChart3 className="h-5 w-5 text-[#007AFF]" />
+                </div>
+                {t.dashboard.portfolio}
+              </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="apple-card-content">
               <CryptoList />
             </CardContent>
           </Card>
 
-          {/* Recent Transactions */}
-          <Card className="card-hover">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>{t.dashboard.recentTransactions}</CardTitle>
-              <Button variant="ghost" size="sm" onClick={() => onNavigate('history')} className="button-press">
+          {/* Recent Transactions Style Apple */}
+          <Card className="apple-card">
+            <CardHeader className="flex flex-row items-center justify-between apple-card-header">
+              <CardTitle className="apple-card-title">
+                <div className="p-2 bg-[#F2F2F7] dark:bg-[#2C2C2E] rounded-lg">
+                  <Clock className="h-5 w-5 text-[#007AFF]" />
+                </div>
+                {t.dashboard.recentTransactions}
+              </CardTitle>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => onNavigate('history')} 
+                className="text-[#007AFF] hover:bg-[#F2F2F7] dark:hover:bg-[#2C2C2E] rounded-xl"
+              >
                 {t.dashboard.transactions.viewAll}
               </Button>
             </CardHeader>
-            <CardContent>
+            <CardContent className="apple-card-content">
               <div className="space-y-4">
                 {recentTransactions.map((tx) => (
-                  <div key={tx.id} className="flex items-center justify-between p-3 rounded-lg border card-hover">
+                  <div key={tx.id} className="flex items-center justify-between p-4 bg-[#F2F2F7] dark:bg-[#2C2C2E] rounded-xl border border-[#E5E5EA] dark:border-[#38383A]">
                     <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-full ${
+                      <div className={`p-2 rounded-xl ${
                         tx.type === 'received' 
-                          ? 'bg-green-100 dark:bg-green-900' 
-                          : 'bg-red-100 dark:bg-red-900'
+                          ? 'bg-[#34C759]/10' 
+                          : 'bg-[#FF3B30]/10'
                       }`}>
                         {tx.type === 'received' ? (
-                          <ArrowDownLeft className="h-4 w-4 text-green-600 dark:text-green-400" />
+                          <ArrowDownLeft className="h-4 w-4 text-[#34C759]" />
                         ) : (
-                          <ArrowUpRight className="h-4 w-4 text-red-600 dark:text-red-400" />
+                          <ArrowUpRight className="h-4 w-4 text-[#FF3B30]" />
                         )}
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <p className="font-medium">
+                          <p className="font-medium text-[#000000] dark:text-[#FFFFFF]">
                             {tx.type === 'received' ? t.dashboard.transactions.received : t.dashboard.transactions.sent} {tx.crypto}
                           </p>
                           {getStatusIcon(tx.status)}
                         </div>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-sm text-[#8E8E93]">
                           {formatTimeAgo(tx.timestamp)}
                         </p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className={`font-medium transaction-amount ${focusMode ? 'sensitive-data' : ''}`}>
+                      <p className={`font-medium transaction-amount ${focusMode ? 'sensitive-data' : ''} text-[#000000] dark:text-[#FFFFFF]`}>
                         {tx.type === 'received' ? '+' : '-'}{tx.amount} {tx.crypto}
                       </p>
-                      <p className={`text-sm text-muted-foreground transaction-amount ${focusMode ? 'sensitive-data' : ''}`}>
+                      <p className={`text-sm text-[#8E8E93] transaction-amount ${focusMode ? 'sensitive-data' : ''}`}>
                         CHF {tx.value.toLocaleString('fr-CH', { minimumFractionDigits: 2 })}
                       </p>
                     </div>
@@ -359,12 +444,17 @@ export function MainDashboard({ userType, onNavigate, walletData, onShowMtPeleri
           </Card>
         </div>
 
-        {/* Real-time Prices */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Prix en Temps Réel</CardTitle>
+        {/* Real-time Prices Style Apple */}
+        <Card className="apple-card">
+          <CardHeader className="apple-card-header">
+            <CardTitle className="apple-card-title">
+              <div className="p-2 bg-[#F2F2F7] dark:bg-[#2C2C2E] rounded-lg">
+                <TrendingUp className="h-5 w-5 text-[#007AFF]" />
+              </div>
+              Prix en Temps Réel
+            </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="apple-card-content">
             <RealTimePrices />
           </CardContent>
         </Card>

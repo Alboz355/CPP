@@ -84,35 +84,37 @@ export function PinSetupPage({ onPinCreated }: PinSetupPageProps) {
   const isPinMatching = pin === confirmPin && confirmPin.length === 4
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+    <div className="min-h-screen bg-[#F2F2F7] dark:bg-[#000000] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        {/* Header */}
+        {/* Header Professionnel */}
         <div className="text-center mb-8">
-          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-500 shadow-xl">
-            <Shield className="h-8 w-8 text-white" />
+          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-[#007AFF] shadow-lg">
+            <Shield className="h-10 w-10 text-white" />
           </div>
-          <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          <h1 className="text-3xl font-semibold text-[#000000] dark:text-[#FFFFFF] mb-3">
             Sécuriser votre portefeuille
           </h1>
-          <p className="text-gray-600 dark:text-gray-300">Créez un PIN à 4 chiffres pour protéger l'accès à votre portefeuille</p>
+          <p className="text-[#8E8E93] text-base leading-relaxed">
+            Créez un code PIN à 4 chiffres pour protéger l'accès à votre portefeuille crypto
+          </p>
         </div>
 
-        {/* Main Card */}
-        <Card className="shadow-2xl border-0 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm">
-          <CardHeader className="text-center pb-6">
-            <CardTitle className="text-xl font-bold text-gray-800 dark:text-gray-200 flex items-center justify-center gap-2">
-              <Lock className="h-5 w-5" />
+        {/* Main Card Style Apple */}
+        <Card className="bg-[#FFFFFF] dark:bg-[#1C1C1E] border border-[#E5E5EA] dark:border-[#38383A] rounded-3xl shadow-sm overflow-hidden">
+          <CardHeader className="text-center pb-6 pt-8">
+            <CardTitle className="text-2xl font-semibold text-[#000000] dark:text-[#FFFFFF] flex items-center justify-center gap-3">
+              <Lock className="h-6 w-6 text-[#007AFF]" />
               Configuration du PIN
             </CardTitle>
-            <CardDescription className="text-gray-600 dark:text-gray-400">
-              Choisissez un PIN sécurisé de 4 chiffres
+            <CardDescription className="text-[#8E8E93] text-base mt-2">
+              Choisissez un code PIN sécurisé de 4 chiffres
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-6">
+          <CardContent className="px-8 pb-8">
+            <form onSubmit={handleSubmit} className="space-y-8">
               {/* PIN Input */}
-              <div className="space-y-2">
-                <Label htmlFor="pin" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              <div className="space-y-4">
+                <Label htmlFor="pin" className="text-base font-medium text-[#000000] dark:text-[#FFFFFF]">
                   Nouveau PIN (4 chiffres)
                 </Label>
                 <div className="relative">
@@ -122,45 +124,38 @@ export function PinSetupPage({ onPinCreated }: PinSetupPageProps) {
                     value={pin}
                     onChange={handlePinChange}
                     placeholder="••••"
-                    className="pr-12 text-center text-2xl font-mono tracking-[0.5em] h-14"
+                    className="text-center text-3xl font-mono tracking-[1em] h-16 bg-[#F2F2F7] dark:bg-[#2C2C2E] border-0 rounded-2xl text-[#000000] dark:text-[#FFFFFF] focus:ring-2 focus:ring-[#007AFF] focus:bg-[#FFFFFF] dark:focus:bg-[#1C1C1E]"
                     maxLength={4}
                   />
                   <Button
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 h-10 w-10 hover:bg-[#E5E5EA] dark:hover:bg-[#2C2C2E] rounded-xl"
                     onClick={() => setShowPin(!showPin)}
                   >
-                    {showPin ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {showPin ? <EyeOff className="h-5 w-5 text-[#8E8E93]" /> : <Eye className="h-5 w-5 text-[#8E8E93]" />}
                   </Button>
                 </div>
-                <div className="text-center">
-                  <p className="text-xs text-muted-foreground">
-                    {pin.length}/4 chiffres
-                  </p>
+                <div className="flex items-center justify-center gap-3 min-h-[24px]">
+                  {pin.length > 0 && (
+                    <>
+                      {isPinValid ? (
+                        <CheckCircle className="h-4 w-4 text-[#34C759]" />
+                      ) : (
+                        <AlertTriangle className="h-4 w-4 text-[#FF9500]" />
+                      )}
+                      <span className={`text-sm font-medium ${isPinValid ? "text-[#34C759]" : "text-[#FF9500]"}`}>
+                        {isPinValid ? "PIN valide" : validatePin(pin)}
+                      </span>
+                    </>
+                  )}
                 </div>
-                {pin.length > 0 && (
-                  <div className="flex items-center gap-2 text-xs">
-                    {isPinValid ? (
-                      <CheckCircle className="h-3 w-3 text-green-500" />
-                    ) : (
-                      <AlertTriangle className="h-3 w-3 text-amber-500" />
-                    )}
-                    <span
-                      className={
-                        isPinValid ? "text-green-600 dark:text-green-400" : "text-amber-600 dark:text-amber-400"
-                      }
-                    >
-                      {isPinValid ? "PIN valide" : validatePin(pin)}
-                    </span>
-                  </div>
-                )}
               </div>
 
               {/* Confirm PIN Input */}
-              <div className="space-y-2">
-                <Label htmlFor="confirmPin" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              <div className="space-y-4">
+                <Label htmlFor="confirmPin" className="text-base font-medium text-[#000000] dark:text-[#FFFFFF]">
                   Confirmer le PIN
                 </Label>
                 <div className="relative">
@@ -170,40 +165,36 @@ export function PinSetupPage({ onPinCreated }: PinSetupPageProps) {
                     value={confirmPin}
                     onChange={handleConfirmPinChange}
                     placeholder="••••"
-                    className="pr-12 text-center text-2xl font-mono tracking-[0.5em] h-14"
+                    className="text-center text-3xl font-mono tracking-[1em] h-16 bg-[#F2F2F7] dark:bg-[#2C2C2E] border-0 rounded-2xl text-[#000000] dark:text-[#FFFFFF] focus:ring-2 focus:ring-[#007AFF] focus:bg-[#FFFFFF] dark:focus:bg-[#1C1C1E]"
                     maxLength={4}
                   />
                 </div>
-                <div className="text-center">
-                  <p className="text-xs text-muted-foreground">
-                    {confirmPin.length}/4 chiffres
-                  </p>
+                <div className="flex items-center justify-center gap-3 min-h-[24px]">
+                  {confirmPin.length > 0 && (
+                    <>
+                      {isPinMatching ? (
+                        <CheckCircle className="h-4 w-4 text-[#34C759]" />
+                      ) : (
+                        <AlertTriangle className="h-4 w-4 text-[#FF3B30]" />
+                      )}
+                      <span className={`text-sm font-medium ${isPinMatching ? "text-[#34C759]" : "text-[#FF3B30]"}`}>
+                        {isPinMatching ? "PINs identiques" : "Les PINs ne correspondent pas"}
+                      </span>
+                    </>
+                  )}
                 </div>
-                {confirmPin.length > 0 && (
-                  <div className="flex items-center gap-2 text-xs">
-                    {isPinMatching ? (
-                      <CheckCircle className="h-3 w-3 text-green-500" />
-                    ) : (
-                      <AlertTriangle className="h-3 w-3 text-red-500" />
-                    )}
-                    <span
-                      className={
-                        isPinMatching ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
-                      }
-                    >
-                      {isPinMatching ? "PINs identiques" : "Les PINs ne correspondent pas"}
-                    </span>
-                  </div>
-                )}
               </div>
 
               {/* Security Tips */}
-              <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
-                <h4 className="font-medium text-blue-800 dark:text-blue-300 mb-2">Conseils de sécurité :</h4>
-                <ul className="text-xs text-blue-700 dark:text-blue-400 space-y-1">
+              <div className="p-6 rounded-2xl bg-[#F2F2F7] dark:bg-[#2C2C2E] border border-[#E5E5EA] dark:border-[#38383A]">
+                <h4 className="font-semibold text-[#000000] dark:text-[#FFFFFF] mb-4 flex items-center gap-2">
+                  <Shield className="h-4 w-4 text-[#007AFF]" />
+                  Conseils de sécurité
+                </h4>
+                <ul className="text-sm text-[#8E8E93] space-y-2 leading-relaxed">
                   <li>• Utilisez un PIN unique de 4 chiffres</li>
                   <li>• Évitez les séquences simples (1234, 0000)</li>
-                  <li>• Ne partagez jamais votre PIN avec personne</li>
+                  <li>• Ne partagez jamais votre PIN</li>
                   <li>• Mémorisez-le plutôt que de l'écrire</li>
                 </ul>
               </div>
@@ -212,32 +203,35 @@ export function PinSetupPage({ onPinCreated }: PinSetupPageProps) {
               <Button
                 type="submit"
                 disabled={!isPinValid || !isPinMatching || isCreating}
-                className="w-full h-12 text-base font-medium bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white shadow-lg hover:shadow-xl transition-all duration-200 touch-target"
+                className="w-full h-14 text-base font-semibold bg-[#007AFF] hover:bg-[#0051D5] disabled:bg-[#E5E5EA] disabled:text-[#8E8E93] text-white rounded-2xl transition-all duration-200 shadow-sm disabled:shadow-none"
               >
                 {isCreating ? (
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                     Configuration en cours...
                   </div>
                 ) : (
-                  "🔒 Sécuriser mon portefeuille"
+                  "Sécuriser mon portefeuille"
                 )}
               </Button>
             </form>
 
             {/* Error Message */}
             {error && (
-              <Alert className="mt-4 border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20">
-                <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400" />
-                <AlertDescription className="text-red-600 dark:text-red-400">{error}</AlertDescription>
+              <Alert className="mt-6 bg-[#FF3B30]/10 border border-[#FF3B30]/20 rounded-2xl">
+                <AlertTriangle className="h-4 w-4 text-[#FF3B30]" />
+                <AlertDescription className="text-[#FF3B30] font-medium">{error}</AlertDescription>
               </Alert>
             )}
           </CardContent>
         </Card>
 
         {/* Footer */}
-        <div className="text-center mt-6 text-xs text-gray-500 dark:text-gray-400">
-          <p>🔐 Votre PIN est stocké localement et chiffré sur votre appareil</p>
+        <div className="text-center mt-6">
+          <p className="text-xs text-[#8E8E93] flex items-center justify-center gap-2">
+            <Shield className="h-3 w-3" />
+            Votre PIN est stocké localement et chiffré sur votre appareil
+          </p>
         </div>
       </div>
     </div>

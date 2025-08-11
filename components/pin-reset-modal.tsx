@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { X, Shield, AlertCircle, CheckCircle, Key } from 'lucide-react'
 import { SecurityManager } from "@/lib/security-manager"
+import { resetPin as resetHashedPin } from "@/lib/pin-utils"
 
 interface PinResetModalProps {
   isOpen: boolean
@@ -87,7 +88,7 @@ export function PinResetModal({ isOpen, onPinReset, onCancel }: PinResetModalPro
 
     setTimeout(() => {
       // Sauvegarder le nouveau PIN
-      localStorage.setItem("pin-hash", btoa(newPin))
+      resetHashedPin(newPin)
       onPinReset(newPin)
       setIsResetting(false)
     }, 500)
@@ -106,7 +107,7 @@ export function PinResetModal({ isOpen, onPinReset, onCancel }: PinResetModalPro
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[10000]">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-center">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-red-100 dark:bg-red-500/10 rounded-full flex items-center justify-center">
                 <Key className="h-5 w-5 text-red-600 dark:text-red-400" />
@@ -118,9 +119,6 @@ export function PinResetModal({ isOpen, onPinReset, onCancel }: PinResetModalPro
                 </CardDescription>
               </div>
             </div>
-            <Button variant="ghost" size="icon" onClick={handleClose}>
-              <X className="h-4 w-4" />
-            </Button>
           </div>
         </CardHeader>
 

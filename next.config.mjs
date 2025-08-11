@@ -38,6 +38,25 @@ const nextConfig = {
   //     },
   //   ];
   // },
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          { key: 'X-Frame-Options', value: 'DENY' },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+          { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
+        ],
+      },
+    ]
+  },
+  webpack: (config) => {
+    // Activer WebAssembly pour tiny-secp256k1
+    config.experiments = { ...(config.experiments || {}), asyncWebAssembly: true }
+    config.module.rules.push({ test: /\.wasm$/, type: 'webassembly/async' })
+    return config
+  },
 };
 
 export default nextConfig;

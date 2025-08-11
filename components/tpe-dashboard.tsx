@@ -296,19 +296,19 @@ export function TPEDashboard({ currentPage, onNavigate, onExitTPE, walletData }:
       case "tpe-search":
         return <TPESearchPage onNavigate={onNavigate} onBack={() => onNavigate("tpe")} />
       case "tpe-billing":
-        return <TPEBillingPage onNavigate={onNavigate} onBack={() => onNavigate("tpe")} />
+        return <TPEBillingPage onNavigate={onNavigate} />
       case "tpe-payment":
         return <TPEPaymentPage onNavigate={onNavigate} onBack={() => onNavigate("tpe")} walletData={walletData} />
       case "tpe-conversion":
-        return <TPEConversionPage onNavigate={onNavigate} onBack={() => onNavigate("tpe")} />
+        return <TPEConversionPage onNavigate={onNavigate} />
       case "tpe-history":
-        return <TPEHistoryPage onNavigate={onNavigate} onBack={() => onNavigate("tpe")} />
+        return <TPEHistoryPage onNavigate={(page) => onNavigate(page as AppState)} onBack={() => onNavigate("tpe")} />
       case "tpe-settings":
-        return <TPESettingsPage onNavigate={onNavigate} onBack={() => onNavigate("tpe")} />
+        return <TPESettingsPage onNavigate={(page) => onNavigate(page as AppState)} onBack={() => onNavigate("tpe")} />
       case "tpe-vat-management":
-        return <TPEVatManagement onNavigate={onNavigate} onBack={() => onNavigate("tpe")} />
+        return <TPEVatManagement onNavigate={(page) => onNavigate(page as AppState)} />
       case "tpe-statistics":
-        return <TPEStatisticsPage onNavigate={onNavigate} onBack={() => onNavigate("tpe")} />
+        return <TPEStatisticsPage onNavigate={(page) => onNavigate(page as AppState)} onBack={() => onNavigate("tpe")} />
       default:
         return renderTPEMenu()
     }

@@ -5,8 +5,14 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { LanguageProvider } from "@/contexts/language-context"
 import { CurrencyProvider } from "@/contexts/currency-context"
 import { Toaster } from "@/components/ui/toaster"
+import { ObservabilityInit } from '@/components/observability-init'
 
 const inter = Inter({ subsets: ["latin"] })
+
+const isDev = process.env.NODE_ENV !== 'production'
+const csp = isDev
+  ? "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; img-src 'self' data: https: blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' ws: http: https:; worker-src 'self' blob:; base-uri 'self'; form-action 'self'"
+  : "default-src 'self'; script-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https:; worker-src 'self' blob:; base-uri 'self'; form-action 'self'"
 
 export const metadata: Metadata = {
   title: "Crypto Wallet App - Portefeuille Crypto Sécurisé",
@@ -81,7 +87,7 @@ export const metadata: Metadata = {
       },
     ],
   },
-    generator: 'v0.dev'
+  generator: "v0.dev",
 }
 
 export const viewport: Viewport = {
@@ -109,6 +115,9 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Crypto Wallet" />
         <meta name="mobile-web-app-capable" content="yes" />
+
+        {/* Content Security Policy (meta) - frame-ancestors non supporté via meta */}
+        <meta httpEquiv="Content-Security-Policy" content={csp} />
         
         {/* iOS Splash Screens */}
         <link
@@ -148,6 +157,7 @@ export default function RootLayout({
                 {children}
               </div>
               <Toaster />
+              <ObservabilityInit />
             </CurrencyProvider>
           </LanguageProvider>
         </ThemeProvider>

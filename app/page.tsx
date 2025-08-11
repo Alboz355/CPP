@@ -24,6 +24,8 @@ import { SecurityManager } from "@/lib/security-manager"
 import { BackupManager } from "@/lib/backup-manager"
 import { OfflineManager } from "@/lib/offline-manager"
 import { UserTypeSelection } from "@/components/user-type-selection"
+import { setPin as setHashedPin, verifyPin as verifyHashedPin } from "@/lib/pin-utils"
+import type { WalletData } from "@/lib/wallet-utils"
 
 export type AppState =
   | "onboarding"
@@ -45,21 +47,6 @@ export type AppState =
   | "tpe-statistics"
   | "user-selection"
   | "auth"
-
-interface WalletData {
-  mnemonic: string
-  addresses: {
-    bitcoin: string
-    ethereum: string
-    algorand: string
-  }
-  balances: {
-    bitcoin: string
-    ethereum: string
-    algorand: string
-  }
-  accounts: any[]
-}
 
 export default function CryptoWalletApp() {
   const [currentPage, setCurrentPage] = useState<AppState>("onboarding")
@@ -221,11 +208,9 @@ export default function CryptoWalletApp() {
     handleStorageChange()
 
     // Listen for changes
-    const interval = setInterval(handleStorageChange, 100)
     window.addEventListener('storage', handleStorageChange)
     
     return () => {
-      clearInterval(interval)
       window.removeEventListener('storage', handleStorageChange)
     }
   }, [])
@@ -253,7 +238,8 @@ export default function CryptoWalletApp() {
   const handlePinCreated = (pin: string) => {
     try {
       console.log("🔐 PIN created")
-      localStorage.setItem("pin-hash", btoa(pin))
+      // Stockage sécurisé: hachage salé via WebCrypto
+      setHashedPin(pin)
       localStorage.setItem("onboarding-completed", "true")
       navigateToPage("app-presentation")
     } catch (error) {
@@ -345,7 +331,8 @@ export default function CryptoWalletApp() {
 
   const handlePinChanged = (newPin: string) => {
     try {
-      localStorage.setItem("pin-hash", btoa(newPin))
+      // Mise à jour sécurisée du PIN
+      setHashedPin(newPin)
       setShowChangePinModal(false)
       alert("Code PIN modifié avec succès !")
     } catch (error) {

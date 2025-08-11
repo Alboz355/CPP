@@ -24,6 +24,7 @@ import {
   ArrowLeft,
   Save,
 } from "lucide-react"
+import type { AppState } from '@/app/page'
 
 interface Customer {
   id: string
@@ -40,7 +41,7 @@ interface Customer {
 }
 
 interface TPESearchPageProps {
-  onNavigate: (page: string) => void
+  onNavigate: (page: AppState) => void
   onBack: () => void
 }
 

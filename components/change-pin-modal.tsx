@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { X, Shield, AlertCircle, CheckCircle } from 'lucide-react'
+import { X, Shield, AlertCircle, CheckCircle, Key } from 'lucide-react'
+import { changePin as changeHashedPin } from '@/lib/pin-utils'
 
 interface ChangePinModalProps {
   isOpen: boolean
@@ -84,16 +85,17 @@ export function ChangePinModal({ isOpen, onPinChanged, onCancel }: ChangePinModa
 
     // Vérifier l'ancien PIN
     setTimeout(() => {
-      const storedPin = localStorage.getItem("pin-hash")
-      if (storedPin && btoa(currentPin) === storedPin) {
-        onPinChanged(newPin)
-        setCurrentPin("")
-        setNewPin("")
-        setConfirmPin("")
-      } else {
-        setError("Code PIN actuel incorrect")
-      }
-      setIsChanging(false)
+      changeHashedPin(currentPin, newPin).then((ok) => {
+        if (ok) {
+          onPinChanged(newPin)
+          setCurrentPin("")
+          setNewPin("")
+          setConfirmPin("")
+        } else {
+          setError("Code PIN actuel incorrect")
+        }
+        setIsChanging(false)
+      })
     }, 500)
   }
 
@@ -101,19 +103,18 @@ export function ChangePinModal({ isOpen, onPinChanged, onCancel }: ChangePinModa
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <Card className="w-full max-w-md">
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-center">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-orange-100 dark:bg-orange-500/10 rounded-full flex items-center justify-center">
-                <Shield className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+              <div className="w-10 h-10 bg-blue-100 dark:bg-blue-500/10 rounded-full flex items-center justify-center">
+                <Key className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
-                <CardTitle className="text-xl">Changer le code PIN</CardTitle>
-                <CardDescription>Modifiez votre code PIN de sécurité (4 chiffres)</CardDescription>
+                <CardTitle className="text-xl">Changer le PIN</CardTitle>
+                <CardDescription>
+                  Créez un nouveau PIN de 4 chiffres pour sécuriser votre portefeuille
+                </CardDescription>
               </div>
             </div>
-            <Button variant="ghost" size="icon" onClick={onCancel}>
-              <X className="h-4 w-4" />
-            </Button>
           </div>
         </CardHeader>
 

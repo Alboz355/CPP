@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { X, Mail, Send, CheckCircle, AlertCircle } from "lucide-react"
+import { X, Mail, Send, CheckCircle, AlertCircle, MessageCircle } from "lucide-react"
 import emailjs from "@emailjs/browser"
 
 interface SupportContactModalProps {
@@ -127,19 +127,18 @@ export function SupportContactModal({ isOpen, onClose }: SupportContactModalProp
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-center">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-blue-100 dark:bg-blue-500/10 rounded-full flex items-center justify-center">
-                <Mail className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                <MessageCircle className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               </div>
               <div>
-                <CardTitle className="text-xl">Contacter le support</CardTitle>
-                <CardDescription>Nous sommes là pour vous aider avec votre portefeuille crypto</CardDescription>
+                <CardTitle className="text-xl">Support & Contact</CardTitle>
+                <CardDescription>
+                  Besoin d'aide ? Contactez notre équipe support 24/7
+                </CardDescription>
               </div>
             </div>
-            <Button variant="ghost" size="icon" onClick={handleClose}>
-              <X className="h-4 w-4" />
-            </Button>
           </div>
         </CardHeader>
 

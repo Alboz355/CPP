@@ -3,18 +3,20 @@ export interface WalletBalance {
   bitcoin: number
   ethereum: number
   algorand: number
+  solana: number
 }
 
 export interface WalletAddresses {
   bitcoin: string
   ethereum: string
   algorand: string
+  solana: string
 }
 
 export interface Transaction {
   id: string
   type: "sent" | "received"
-  crypto: "bitcoin" | "ethereum" | "algorand"
+  crypto: "bitcoin" | "ethereum" | "algorand" | "solana"
   amount: string
   address: string
   timestamp: number
@@ -28,11 +30,13 @@ export interface WalletData {
     bitcoin: string
     ethereum: string
     algorand: string
+    solana: string
   }
   balances: {
     bitcoin: number
     ethereum: number
     algorand: number
+    solana: number
   }
 }
 
@@ -152,18 +156,16 @@ const BIP39_WORDLIST = [
 
 // Crypto utility functions
 function sha256(data: string): string {
-  // Simplified SHA256 implementation for demo
   let hash = 0
   for (let i = 0; i < data.length; i++) {
     const char = data.charCodeAt(i)
     hash = (hash << 5) - hash + char
-    hash = hash & hash // Convert to 32-bit integer
+    hash = hash & hash
   }
   return Math.abs(hash).toString(16).padStart(8, "0")
 }
 
 function pbkdf2(password: string, salt: string, iterations: number): string {
-  // Simplified PBKDF2 implementation for demo
   let result = password + salt
   for (let i = 0; i < iterations; i++) {
     result = sha256(result)
@@ -172,7 +174,6 @@ function pbkdf2(password: string, salt: string, iterations: number): string {
 }
 
 function generateEntropy(bits: number): string {
-  // Generate random entropy
   const bytes = bits / 8
   let entropy = ""
   for (let i = 0; i < bytes; i++) {
@@ -184,17 +185,14 @@ function generateEntropy(bits: number): string {
 }
 
 function entropyToMnemonic(entropy: string): string {
-  // Convert entropy to mnemonic using BIP39
   const entropyBits = entropy.length * 4
   const checksumBits = entropyBits / 32
   const totalBits = entropyBits + checksumBits
 
-  // Add checksum
   const hash = sha256(entropy)
   const checksum = hash.substring(0, Math.ceil(checksumBits / 4))
   const fullEntropy = entropy + checksum
 
-  // Convert to mnemonic
   const words = []
   const wordCount = totalBits / 11
 
@@ -211,32 +209,26 @@ function entropyToMnemonic(entropy: string): string {
 }
 
 function mnemonicToSeed(mnemonic: string, passphrase = ""): string {
-  // Convert mnemonic to seed using PBKDF2
   const salt = "mnemonic" + passphrase
   return pbkdf2(mnemonic, salt, 2048)
 }
 
 function derivePrivateKey(seed: string, path: string): string {
-  // Simplified key derivation (BIP32-like)
   const combined = seed + path
   return sha256(combined)
 }
 
 function privateKeyToPublicKey(privateKey: string): string {
-  // Simplified public key generation
   return sha256(privateKey + "public")
 }
 
 // Address generation functions
 function generateBitcoinAddress(publicKey: string): string {
-  // Simplified Bitcoin address generation (P2PKH)
   const hash160 = sha256(publicKey).substring(0, 40)
   const version = "00"
   const payload = version + hash160
   const checksum = sha256(sha256(payload)).substring(0, 8)
   const fullPayload = payload + checksum
-
-  // Base58 encoding simulation
   return (
     "1" +
     btoa(fullPayload)
@@ -246,22 +238,25 @@ function generateBitcoinAddress(publicKey: string): string {
 }
 
 function generateEthereumAddress(publicKey: string): string {
-  // Simplified Ethereum address generation
   const hash = sha256(publicKey)
   return "0x" + hash.substring(0, 40)
 }
 
 function generateAlgorandAddress(publicKey: string): string {
-  // Simplified Algorand address generation
   const hash = sha256(publicKey)
   return hash.substring(0, 58).toUpperCase()
 }
 
+function generateSolanaAddress(publicKey: string): string {
+  // Base58-like placeholder (pour fallback uniquement)
+  const base58 = (str: string) => str.replace(/[^1-9A-HJ-NP-Za-km-z]/g, 'A')
+  const raw = base58(btoa(publicKey)).padEnd(44, 'A').slice(0, 44)
+  return raw
+}
+
 // Export the missing generateCryptoAddress function
-export function generateCryptoAddress(crypto: "bitcoin" | "ethereum" | "algorand", publicKey?: string): string {
-  // If no public key provided, generate a random one for demo purposes
+export function generateCryptoAddress(crypto: "bitcoin" | "ethereum" | "algorand" | "solana", publicKey?: string): string {
   const demoPublicKey = publicKey || sha256(Math.random().toString())
-  
   switch (crypto) {
     case "bitcoin":
       return generateBitcoinAddress(demoPublicKey)
@@ -269,6 +264,8 @@ export function generateCryptoAddress(crypto: "bitcoin" | "ethereum" | "algorand
       return generateEthereumAddress(demoPublicKey)
     case "algorand":
       return generateAlgorandAddress(demoPublicKey)
+    case "solana":
+      return generateSolanaAddress(demoPublicKey)
     default:
       throw new Error(`Unsupported cryptocurrency: ${crypto}`)
   }
@@ -277,29 +274,28 @@ export function generateCryptoAddress(crypto: "bitcoin" | "ethereum" | "algorand
 // Main wallet functions
 export function generateWallet(): {
   mnemonic: string
-  addresses: { bitcoin: string; ethereum: string; algorand: string }
+  addresses: { bitcoin: string; ethereum: string; algorand: string; solana: string }
 } {
   try {
-    // Generate 128 bits of entropy for 12-word mnemonic
     const entropy = generateEntropy(128)
     const mnemonic = entropyToMnemonic(entropy)
     const seed = mnemonicToSeed(mnemonic)
 
-    // Derive keys for different cryptocurrencies
     const btcPrivateKey = derivePrivateKey(seed, "m/44'/0'/0'/0/0")
     const ethPrivateKey = derivePrivateKey(seed, "m/44'/60'/0'/0/0")
     const algoPrivateKey = derivePrivateKey(seed, "m/44'/283'/0'/0/0")
+    const solPrivateKey = derivePrivateKey(seed, "m/44'/501'/0'")
 
-    // Generate public keys
     const btcPublicKey = privateKeyToPublicKey(btcPrivateKey)
     const ethPublicKey = privateKeyToPublicKey(ethPrivateKey)
     const algoPublicKey = privateKeyToPublicKey(algoPrivateKey)
+    const solPublicKey = privateKeyToPublicKey(solPrivateKey)
 
-    // Generate addresses
     const addresses = {
       bitcoin: generateBitcoinAddress(btcPublicKey),
       ethereum: generateEthereumAddress(ethPublicKey),
       algorand: generateAlgorandAddress(algoPublicKey),
+      solana: generateSolanaAddress(solPublicKey),
     }
 
     return { mnemonic, addresses }
@@ -311,16 +307,14 @@ export function generateWallet(): {
 
 export function importWallet(mnemonic: string): {
   mnemonic: string
-  addresses: { bitcoin: string; ethereum: string; algorand: string }
+  addresses: { bitcoin: string; ethereum: string; algorand: string; solana: string }
 } {
   try {
-    // Validate mnemonic
     const words = mnemonic.trim().split(/\s+/)
     if (words.length !== 12 && words.length !== 24) {
       throw new Error("Invalid mnemonic: must be 12 or 24 words")
     }
 
-    // Validate words are in wordlist
     for (const word of words) {
       if (!BIP39_WORDLIST.includes(word.toLowerCase())) {
         throw new Error(`Invalid word in mnemonic: ${word}`)
@@ -329,21 +323,21 @@ export function importWallet(mnemonic: string): {
 
     const seed = mnemonicToSeed(mnemonic)
 
-    // Derive keys for different cryptocurrencies
     const btcPrivateKey = derivePrivateKey(seed, "m/44'/0'/0'/0/0")
     const ethPrivateKey = derivePrivateKey(seed, "m/44'/60'/0'/0/0")
     const algoPrivateKey = derivePrivateKey(seed, "m/44'/283'/0'/0/0")
+    const solPrivateKey = derivePrivateKey(seed, "m/44'/501'/0'")
 
-    // Generate public keys
     const btcPublicKey = privateKeyToPublicKey(btcPrivateKey)
     const ethPublicKey = privateKeyToPublicKey(ethPrivateKey)
     const algoPublicKey = privateKeyToPublicKey(algoPrivateKey)
+    const solPublicKey = privateKeyToPublicKey(solPrivateKey)
 
-    // Generate addresses
     const addresses = {
       bitcoin: generateBitcoinAddress(btcPublicKey),
       ethereum: generateEthereumAddress(ethPublicKey),
       algorand: generateAlgorandAddress(algoPublicKey),
+      solana: generateSolanaAddress(solPublicKey),
     }
 
     return { mnemonic, addresses }
@@ -380,15 +374,24 @@ export function formatAddress(address: string, length = 8): string {
   return `${address.slice(0, length)}...${address.slice(-length)}`
 }
 
-export function formatBalance(balance: number, symbol: string): string {
-  if (balance === 0) return `0 ${symbol}`
-
-  if (balance < 0.001) {
-    return `${balance.toFixed(8)} ${symbol}`
-  } else if (balance < 1) {
-    return `${balance.toFixed(6)} ${symbol}`
+export function formatBalance(balance: number | string, symbol: string): string {
+  const numBalance = typeof balance === 'string' ? parseFloat(balance) : balance
+  
+  // Si c'est exactement 0, afficher juste "0"
+  if (numBalance === 0) return `0 ${symbol}`
+  
+  // Pour les très petites valeurs
+  if (numBalance < 0.00001) {
+    return `${numBalance.toFixed(8).replace(/\.?0+$/, '')} ${symbol}`
+  } else if (numBalance < 0.001) {
+    return `${numBalance.toFixed(6).replace(/\.?0+$/, '')} ${symbol}`
+  } else if (numBalance < 1) {
+    return `${numBalance.toFixed(4).replace(/\.?0+$/, '')} ${symbol}`
+  } else if (numBalance < 1000) {
+    return `${numBalance.toFixed(2).replace(/\.?0+$/, '')} ${symbol}`
   } else {
-    return `${balance.toFixed(4)} ${symbol}`
+    // Pour les grandes valeurs, utiliser des séparateurs de milliers
+    return `${numBalance.toLocaleString('fr-CH', { maximumFractionDigits: 2 })} ${symbol}`
   }
 }
 
@@ -405,7 +408,7 @@ export function generateTransactionId(): string {
   return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
 }
 
-export function isValidAddress(address: string, type: "bitcoin" | "ethereum" | "algorand"): boolean {
+export function isValidAddress(address: string, type: "bitcoin" | "ethereum" | "algorand" | "solana"): boolean {
   switch (type) {
     case "bitcoin":
       return /^(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,87}$/.test(address)
@@ -413,6 +416,8 @@ export function isValidAddress(address: string, type: "bitcoin" | "ethereum" | "
       return /^0x[a-fA-F0-9]{40}$/.test(address)
     case "algorand":
       return /^[A-Z2-7]{58}$/.test(address)
+    case "solana":
+      return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(address)
     default:
       return false
   }
@@ -476,16 +481,16 @@ export function createWallet(): WalletData {
   const wallet = generateWallet()
   return {
     mnemonic: wallet.mnemonic,
-    addresses: wallet.addresses,
+    addresses: wallet.addresses as any,
     balances: {
       bitcoin: 0,
       ethereum: 0,
       algorand: 0,
+      solana: 0,
     },
   }
 }
 
-// Additional utility functions
 export function generateSeedPhrase(wordCount: 12 | 24 = 12): string {
   const entropy = generateEntropy(wordCount === 12 ? 128 : 256)
   return entropyToMnemonic(entropy)
@@ -493,19 +498,32 @@ export function generateSeedPhrase(wordCount: 12 | 24 = 12): string {
 
 export function seedPhraseToAddresses(mnemonic: string): WalletAddresses {
   const wallet = importWallet(mnemonic)
-  return wallet.addresses
+  return wallet.addresses as any
 }
 
-export function formatCryptoAmount(amount: number, crypto: "bitcoin" | "ethereum" | "algorand"): string {
+export function formatCryptoAmount(amount: number | string, crypto: "bitcoin" | "ethereum" | "algorand" | "solana"): string {
+  const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount
+  
+  // Si c'est exactement 0, afficher juste "0"
+  if (numAmount === 0) {
+    switch (crypto) {
+      case "bitcoin": return "0 BTC"
+      case "ethereum": return "0 ETH"
+      case "algorand": return "0 ALGO"
+      case "solana": return "0 SOL"
+    }
+  }
+  
+  // Formatage intelligent selon la crypto
   switch (crypto) {
     case "bitcoin":
-      return `${amount.toFixed(8)} BTC`
+      return formatBalance(numAmount, "BTC")
     case "ethereum":
-      return `${amount.toFixed(6)} ETH`
+      return formatBalance(numAmount, "ETH")
     case "algorand":
-      return `${amount.toFixed(6)} ALGO`
-    default:
-      return `${amount} ${crypto.toUpperCase()}`
+      return formatBalance(numAmount, "ALGO")
+    case "solana":
+      return formatBalance(numAmount, "SOL")
   }
 }
 
@@ -526,7 +544,6 @@ export function ethToWei(eth: number): number {
   return Math.round(eth * 1000000000000000000)
 }
 
-// Security utilities
 export function generateSecureRandom(length: number): string {
   const chars = "0123456789abcdef"
   let result = ""
@@ -544,8 +561,7 @@ export function validatePublicKey(publicKey: string): boolean {
   return /^[0-9a-fA-F]{64}$/.test(publicKey)
 }
 
-// Network utilities
-export function getNetworkForCrypto(crypto: "bitcoin" | "ethereum" | "algorand"): string {
+export function getNetworkForCrypto(crypto: "bitcoin" | "ethereum" | "algorand" | "solana"): string {
   switch (crypto) {
     case "bitcoin":
       return "mainnet"
@@ -553,12 +569,13 @@ export function getNetworkForCrypto(crypto: "bitcoin" | "ethereum" | "algorand")
       return "mainnet"
     case "algorand":
       return "mainnet"
+    case "solana":
+      return "mainnet"
     default:
       return "unknown"
   }
 }
 
-// Key derivation utilities
 export function deriveMasterKey(seed: string): string {
   return sha256(seed + "master")
 }

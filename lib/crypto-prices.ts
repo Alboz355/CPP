@@ -1,4 +1,6 @@
-// Service de gestion des prix des cryptomonnaies avec support multi-devises
+// Service de gestion des prix des cryptomonnaies avec support multi-devises (CoinMarketCap)
+
+import { CMC_API_KEY } from '@/lib/config'
 
 export interface CryptoPrice {
   id: string
@@ -15,7 +17,7 @@ export type Currency = "CHF" | "EUR" | "USD"
 export class CryptoPriceService {
   private static instance: CryptoPriceService
   private cache: Map<string, { data: CryptoPrice[]; timestamp: number }> = new Map()
-  private readonly CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
+  private readonly CACHE_DURATION = 60 * 1000 // 1 minute
 
   private constructor() {}
 
@@ -35,118 +37,88 @@ export class CryptoPriceService {
     }
 
     try {
-      // Convertir la devise pour l'API CoinGecko
-      const apiCurrency = currency.toLowerCase()
-
-      const response = await fetch(
-        `https://api.coingecko.com/api/v3/coins/markets?vs_currency=${apiCurrency}&ids=bitcoin,ethereum,algorand&order=market_cap_desc&per_page=10&page=1&sparkline=false`,
-      )
+      const convert = currency
+      const symbols = ['BTC', 'ETH', 'ALGO', 'SOL']
+      const url = `https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?symbol=${symbols.join(',')}&convert=${convert}`
+      const response = await fetch(url, {
+        headers: {
+          accept: 'application/json',
+          'X-CMC_PRO_API_KEY': CMC_API_KEY,
+        },
+      })
 
       if (!response.ok) {
-        throw new Error("Failed to fetch crypto prices")
+        throw new Error(`CMC HTTP ${response.status}`)
       }
 
-      const data: CryptoPrice[] = await response.json()
+      const json = await response.json()
+      const data: CryptoPrice[] = []
+
+      const map: Record<string, { id: string; name: string; image: string }> = {
+        BTC: { id: 'bitcoin', name: 'Bitcoin', image: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1.png' },
+        ETH: { id: 'ethereum', name: 'Ethereum', image: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1027.png' },
+        ALGO: { id: 'algorand', name: 'Algorand', image: 'https://s2.coinmarketcap.com/static/img/coins/64x64/4030.png' },
+        SOL: { id: 'solana', name: 'Solana', image: 'https://s2.coinmarketcap.com/static/img/coins/64x64/5426.png' },
+      }
+
+      for (const sym of symbols) {
+        const entry = json.data?.[sym]
+        const quote = entry?.quote?.[convert]
+        if (entry && quote) {
+          const meta = map[sym]
+          data.push({
+            id: meta.id,
+            symbol: sym,
+            name: meta.name,
+            current_price: quote.price,
+            price_change_percentage_24h: quote.percent_change_24h ?? 0,
+            market_cap: quote.market_cap ?? 0,
+            image: meta.image,
+          })
+        }
+      }
+
+      if (data.length === 0) throw new Error('CMC empty data')
+
       this.cache.set(cacheKey, { data, timestamp: Date.now() })
       return data
     } catch (error) {
-      console.error("Error fetching crypto prices:", error)
-      // Retourner des données de fallback avec conversion approximative
+      console.error('CMC error:', error)
       return this.getFallbackPrices(currency)
     }
   }
 
   private getFallbackPrices(currency: Currency): CryptoPrice[] {
-    // Prix de base en USD
     const basePrices = [
-      {
-        id: "bitcoin",
-        symbol: "btc",
-        name: "Bitcoin",
-        current_price: 65000,
-        price_change_percentage_24h: 2.5,
-        market_cap: 1200000000000,
-        image: "https://assets.coingecko.com/coins/images/1/large/bitcoin.png",
-      },
-      {
-        id: "ethereum",
-        symbol: "eth",
-        name: "Ethereum",
-        current_price: 3200,
-        price_change_percentage_24h: -1.2,
-        market_cap: 380000000000,
-        image: "https://assets.coingecko.com/coins/images/279/large/ethereum.png",
-      },
-      {
-        id: "algorand",
-        symbol: "algo",
-        name: "Algorand",
-        current_price: 0.25,
-        price_change_percentage_24h: 5.8,
-        market_cap: 2000000000,
-        image: "https://assets.coingecko.com/coins/images/4380/large/download.png",
-      },
+      { id: 'bitcoin', symbol: 'BTC', name: 'Bitcoin', current_price: 65000, price_change_percentage_24h: 0, market_cap: 1200000000000, image: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1.png' },
+      { id: 'ethereum', symbol: 'ETH', name: 'Ethereum', current_price: 3200, price_change_percentage_24h: 0, market_cap: 380000000000, image: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1027.png' },
+      { id: 'algorand', symbol: 'ALGO', name: 'Algorand', current_price: 0.25, price_change_percentage_24h: 0, market_cap: 2000000000, image: 'https://s2.coinmarketcap.com/static/img/coins/64x64/4030.png' },
+      { id: 'solana', symbol: 'SOL', name: 'Solana', current_price: 150, price_change_percentage_24h: 0, market_cap: 65000000000, image: 'https://s2.coinmarketcap.com/static/img/coins/64x64/5426.png' },
     ]
 
-    // Taux de change approximatifs (en production, utiliser une API de taux de change)
-    const exchangeRates = {
-      USD: 1,
-      CHF: 0.91, // 1 USD = 0.91 CHF
-      EUR: 0.85, // 1 USD = 0.85 EUR
-    }
-
+    const exchangeRates = { USD: 1, CHF: 0.91, EUR: 0.85 }
     const rate = exchangeRates[currency]
 
-    return basePrices.map((crypto) => ({
-      ...crypto,
-      current_price: crypto.current_price * rate,
-      market_cap: crypto.market_cap * rate,
-    }))
+    return basePrices.map((crypto) => ({ ...crypto, current_price: crypto.current_price * rate, market_cap: crypto.market_cap * rate }))
   }
 
-  formatPrice(price: number, currency: Currency = "CHF"): string {
-    const currencySymbols = {
-      CHF: "CHF",
-      EUR: "€",
-      USD: "$",
-    }
-
-    const locales = {
-      CHF: "fr-CH",
-      EUR: "de-DE",
-      USD: "en-US",
-    }
-
-    return new Intl.NumberFormat(locales[currency], {
-      style: "currency",
-      currency: currency,
-      minimumFractionDigits: price < 1 ? 4 : 2,
-      maximumFractionDigits: price < 1 ? 4 : 2,
-    }).format(price)
+  formatPrice(price: number, currency: Currency = 'CHF'): string {
+    const locales = { CHF: 'fr-CH', EUR: 'de-DE', USD: 'en-US' }
+    return new Intl.NumberFormat(locales[currency], { style: 'currency', currency: currency, minimumFractionDigits: price < 1 ? 4 : 2, maximumFractionDigits: price < 1 ? 4 : 2 }).format(price)
   }
 
-  formatMarketCap(marketCap: number, currency: Currency = "CHF"): string {
-    const currencySymbol = currency === "EUR" ? "€" : currency === "USD" ? "$" : "CHF"
-
-    if (marketCap >= 1e12) {
-      return `${(marketCap / 1e12).toFixed(2)}T ${currencySymbol}`
-    } else if (marketCap >= 1e9) {
-      return `${(marketCap / 1e9).toFixed(2)}B ${currencySymbol}`
-    } else if (marketCap >= 1e6) {
-      return `${(marketCap / 1e6).toFixed(2)}M ${currencySymbol}`
-    }
+  formatMarketCap(marketCap: number, currency: Currency = 'CHF'): string {
+    const currencySymbol = currency === 'EUR' ? '€' : currency === 'USD' ? '$' : 'CHF'
+    if (marketCap >= 1e12) return `${(marketCap / 1e12).toFixed(2)}T ${currencySymbol}`
+    if (marketCap >= 1e9) return `${(marketCap / 1e9).toFixed(2)}B ${currencySymbol}`
+    if (marketCap >= 1e6) return `${(marketCap / 1e6).toFixed(2)}M ${currencySymbol}`
     return `${marketCap.toFixed(2)} ${currencySymbol}`
   }
 
   getCurrencySymbol(currency: Currency): string {
-    const symbols = {
-      CHF: "CHF",
-      EUR: "€",
-      USD: "$",
-    }
+    const symbols = { CHF: 'CHF', EUR: '€', USD: '$' }
     return symbols[currency]
   }
 }
 
-// Export de l'instance singleton
 export const cryptoService = CryptoPriceService.getInstance()

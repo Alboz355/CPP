@@ -214,7 +214,7 @@ export class SecurityManager {
           allowCredentials: [{
             id: credentialIdBuffer,
             type: 'public-key',
-            transports: ['internal', 'platform']
+            transports: ['internal']
           }],
           userVerification: 'required',
           timeout: 60000
@@ -402,7 +402,10 @@ export class SecurityManager {
   resetPinWithBackupCode(backupCode: string, newPin: string): boolean {
     if (this.verifyBackupCode(backupCode)) {
       // Sauvegarder le nouveau PIN
-      localStorage.setItem('pin-hash', btoa(newPin))
+      // Utiliser le hachage sécurisé
+      import('./pin-utils').then(async (m) => {
+        await m.resetPin(newPin)
+      })
       return true
     }
     return false

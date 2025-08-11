@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
+import { formatBalance, formatCryptoAmount } from "@/lib/wallet-utils"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -11,6 +12,9 @@ import { useToast } from "@/hooks/use-toast"
 import { useLanguage } from "@/contexts/language-context"
 import type { AppState } from "@/app/page"
 import type { WalletData } from "@/lib/wallet-utils"
+import { getMnemonic } from "@/lib/wallet-real"
+import { sendTransaction } from "@/lib/blockchain-apis"
+import { Input as UITextInput } from "@/components/ui/input"
 
 interface SendPageProps {
   onNavigate: (page: AppState) => void
@@ -23,6 +27,7 @@ export function SendPage({ onNavigate, walletData }: SendPageProps) {
   const [recipientAddress, setRecipientAddress] = useState("")
   const [amount, setAmount] = useState("")
   const [isSending, setIsSending] = useState(false)
+  const [usdcMint, setUsdcMint] = useState("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v")
   const { toast } = useToast()
 
   const handleSendTransaction = async () => {
@@ -52,16 +57,16 @@ export function SendPage({ onNavigate, walletData }: SendPageProps) {
     })
 
     try {
-      // Simulate transaction
-      await new Promise((resolve) => setTimeout(resolve, 3000))
-
-      // In a real app, you would interact with blockchain APIs here
-      // e.g., using ethers.js for Ethereum, bitcoinjs-lib for Bitcoin, algosdk for Algorand
+      const mnemonic = await getMnemonic()
+      if (!mnemonic) throw new Error('Mnemonic introuvable. Veuillez recréer/importer le wallet.')
+      const crypto = selectedCrypto as any
+      const extra = selectedCrypto === 'usdc_spl' ? { usdcMint } : undefined
+      const { txId } = await sendTransaction(crypto, mnemonic, recipientAddress, amount, extra as any)
 
       toast({
         title: t.send.transactionSuccess,
-        description: `Vous avez envoyé ${amount} ${selectedCrypto.toUpperCase()}.`,
-        variant: "success",
+        description: `Vous avez envoyé ${amount} ${selectedCrypto.toUpperCase()} (tx: ${txId.slice(0,10)}...).`,
+        variant: undefined,
       })
       setRecipientAddress("")
       setAmount("")
@@ -69,7 +74,7 @@ export function SendPage({ onNavigate, walletData }: SendPageProps) {
       console.error("Erreur lors de l'envoi:", error)
       toast({
         title: t.send.transactionError,
-        description: "La transaction a échoué. Veuillez réessayer.",
+        description: error instanceof Error ? error.message : "La transaction a échoué.",
         variant: "destructive",
       })
     } finally {
@@ -80,17 +85,28 @@ export function SendPage({ onNavigate, walletData }: SendPageProps) {
   return (
     <div className="min-h-screen bg-background text-foreground ios-safe-area">
       {/* Header */}
-      <div className="flex items-center p-4 ios-safe-top">
-        <Button variant="ghost" size="icon" onClick={() => onNavigate("dashboard")} className="touch-target mr-2">
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <h1 className="text-2xl font-bold">{t.send.title}</h1>
+      <div className="flex items-center justify-between p-4 ios-safe-top border-b border-[#E5E5EA] dark:border-[#38383A]">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => onNavigate("dashboard")}
+            className="btn-icon"
+            aria-label="Retour au tableau de bord"
+          >
+            <ArrowLeft className="h-5 w-5 text-[#007AFF]" />
+          </button>
+          <h1 className="text-2xl font-bold text-[#000000] dark:text-[#FFFFFF]">{t.send.title}</h1>
+        </div>
       </div>
 
       <div className="p-4 space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Détails de l'envoi</CardTitle>
+        <Card className="apple-card">
+          <CardHeader className="apple-card-header">
+            <CardTitle className="apple-card-title">
+              <div className="p-2 bg-[#F2F2F7] dark:bg-[#2C2C2E] rounded-lg">
+                <Send className="h-5 w-5 text-[#007AFF]" />
+              </div>
+              Détails de l'envoi
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-2">
@@ -103,6 +119,8 @@ export function SendPage({ onNavigate, walletData }: SendPageProps) {
                   <SelectItem value="bitcoin">{t.crypto.bitcoin} (BTC)</SelectItem>
                   <SelectItem value="ethereum">{t.crypto.ethereum} (ETH)</SelectItem>
                   <SelectItem value="algorand">{t.crypto.algorand} (ALGO)</SelectItem>
+                  <SelectItem value="solana">{t.crypto.solana} (SOL)</SelectItem>
+                  <SelectItem value="usdc_spl">USDC (Solana)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -130,33 +148,59 @@ export function SendPage({ onNavigate, walletData }: SendPageProps) {
               />
             </div>
 
-            <Button onClick={handleSendTransaction} className="w-full" disabled={isSending}>
+            {selectedCrypto === 'usdc_spl' && (
+              <div className="grid gap-2">
+                <Label htmlFor="usdc-mint">Mint USDC (mainnet par défaut)</Label>
+                <UITextInput
+                  id="usdc-mint"
+                  value={usdcMint}
+                  onChange={(e) => setUsdcMint(e.target.value)}
+                  disabled={isSending}
+                />
+              </div>
+            )}
+
+            <button
+              onClick={handleSendTransaction}
+              className="btn-primary w-full"
+              disabled={isSending}
+            >
               {isSending ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {t.send.sending}
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>{t.send.sending}</span>
                 </>
               ) : (
                 <>
-                  <Send className="mr-2 h-4 w-4" />
-                  {t.send.sendButton}
+                  <Send className="h-4 w-4" />
+                  <span>{t.send.sendButton}</span>
                 </>
               )}
-            </Button>
+            </button>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">{t.send.yourBalance}</CardTitle>
+        <Card className="apple-card">
+          <CardHeader className="apple-card-header">
+            <CardTitle className="apple-card-title">{t.send.yourBalance}</CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">
-              {walletData?.balances[selectedCrypto as keyof typeof walletData.balances] || "0.00"}{" "}
-              {selectedCrypto.toUpperCase()}
+          <CardContent className="apple-card-content">
+            <p className={`text-2xl font-bold balance-display ${
+              parseFloat(String(walletData?.balances[selectedCrypto as keyof typeof walletData.balances] || "0")) === 0 
+                ? 'balance-zero' 
+                : 'balance-positive'
+            }`}>
+              {formatCryptoAmount(
+                walletData?.balances[selectedCrypto as keyof typeof walletData.balances] || 0,
+                selectedCrypto as any
+              )}
             </p>
-            <p className="text-sm text-muted-foreground">
-              {t.send.yourAddress}: {walletData?.addresses[selectedCrypto as keyof typeof walletData.addresses] || "N/A"}
+            <p className="text-sm text-[#8E8E93] mt-2">
+              {t.send.yourAddress}: 
+              <span className="font-mono text-xs">
+                {walletData?.addresses[selectedCrypto as keyof typeof walletData.addresses]?.slice(0, 10)}...
+                {walletData?.addresses[selectedCrypto as keyof typeof walletData.addresses]?.slice(-8) || "N/A"}
+              </span>
             </p>
           </CardContent>
         </Card>

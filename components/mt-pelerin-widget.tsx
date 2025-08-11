@@ -389,16 +389,13 @@ export function MtPelerinWidget({ isOpen, onClose, walletData }: MtPelerinWidget
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-center">
             <DialogTitle className="flex items-center space-x-2">
               <div className="h-8 w-8 bg-gradient-to-r from-blue-500 to-green-500 rounded-full flex items-center justify-center">
                 <span className="text-white font-bold text-sm">MP</span>
               </div>
               <span>Mt Pelerin - Achat de Crypto</span>
             </DialogTitle>
-            <Button variant="ghost" size="sm" onClick={onClose}>
-              <X className="h-4 w-4" />
-            </Button>
           </div>
         </DialogHeader>
 

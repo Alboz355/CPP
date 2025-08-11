@@ -155,60 +155,70 @@ export function AppPresentation({ userType, onComplete }: AppPresentationProps) 
   const currentSlideData = slides[currentSlide]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
-      <div className="w-full max-w-4xl">
-        {/* Progress Bar */}
+    <div className="min-h-screen bg-[#F2F2F7] dark:bg-[#000000] flex items-center justify-center p-4">
+      <div className="w-full max-w-4xl mx-auto">
+        {/* Progress Bar Style Apple */}
         <div className="mb-8">
-          <div className="flex items-center justify-between mb-2">
-            <Badge variant="outline" className="bg-white/50">
+          <div className="flex items-center justify-between mb-4">
+            <Badge variant="outline" className="bg-[#FFFFFF] dark:bg-[#1C1C1E] border-[#E5E5EA] dark:border-[#38383A] text-[#007AFF] font-medium">
               {userType === "client" ? "Mode Client" : "Mode Commerçant"}
             </Badge>
-            <span className="text-sm text-gray-600 dark:text-gray-400">
+            <span className="text-sm text-[#8E8E93] font-medium">
               {currentSlide + 1} / {slides.length}
             </span>
           </div>
-          <Progress value={progress} className="h-2" />
+          <div className="w-full bg-[#E5E5EA] dark:bg-[#2C2C2E] rounded-full h-1">
+            <div 
+              className="h-1 bg-[#007AFF] rounded-full transition-all duration-300 ease-out"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
         </div>
 
-        {/* Main Slide */}
-        <Card className="shadow-2xl border-0 overflow-hidden">
-          <div className={`bg-gradient-to-r ${currentSlideData.gradient} p-8 text-white text-center`}>
-            <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-6">
+        {/* Main Slide Style Apple */}
+        <Card className="bg-[#FFFFFF] dark:bg-[#1C1C1E] border border-[#E5E5EA] dark:border-[#38383A] rounded-3xl shadow-sm overflow-hidden">
+          <div className="bg-[#007AFF] p-8 text-white text-center">
+            <div className="w-20 h-20 bg-white/15 rounded-full flex items-center justify-center mx-auto mb-6 backdrop-blur-sm">
               {currentSlideData.icon}
             </div>
-            <h1 className="text-3xl font-bold mb-4">{currentSlideData.title}</h1>
-            <p className="text-xl opacity-90 max-w-2xl mx-auto">{currentSlideData.description}</p>
+            <h1 className="text-3xl font-semibold mb-4">{currentSlideData.title}</h1>
+            <p className="text-xl text-white/90 max-w-2xl mx-auto leading-relaxed">{currentSlideData.description}</p>
           </div>
 
           <CardContent className="p-8">
             <div className="grid md:grid-cols-2 gap-6">
               {currentSlideData.features.map((feature, index) => (
-                <div key={index} className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                  <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center flex-shrink-0">
-                    <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+                <div key={index} className="flex items-center gap-4 p-4 bg-[#F2F2F7] dark:bg-[#2C2C2E] rounded-2xl border border-[#E5E5EA] dark:border-[#38383A]">
+                  <div className="w-8 h-8 bg-[#34C759] rounded-full flex items-center justify-center flex-shrink-0">
+                    <CheckCircle className="h-5 w-5 text-white" />
                   </div>
-                  <span className="text-gray-700 dark:text-gray-300">{feature}</span>
+                  <span className="text-[#000000] dark:text-[#FFFFFF] font-medium">{feature}</span>
                 </div>
               ))}
             </div>
           </CardContent>
         </Card>
 
-        {/* Navigation */}
+        {/* Navigation Style Apple */}
         <div className="flex items-center justify-between mt-8">
-          <Button variant="outline" onClick={prevSlide} disabled={currentSlide === 0} className="bg-white/50">
-            <ChevronLeft className="h-4 w-4 mr-2" />
-            Précédent
+          <Button 
+            variant="outline" 
+            onClick={prevSlide} 
+            disabled={currentSlide === 0} 
+            className="bg-[#FFFFFF] dark:bg-[#1C1C1E] border-[#E5E5EA] dark:border-[#38383A] hover:bg-[#F2F2F7] dark:hover:bg-[#2C2C2E] rounded-xl h-11 px-6 disabled:opacity-50"
+          >
+            <ChevronLeft className="h-4 w-4 mr-2 text-[#007AFF]" />
+            <span className="text-[#007AFF] font-medium">Précédent</span>
           </Button>
 
-          {/* Slide Indicators */}
-          <div className="flex items-center gap-2">
+          {/* Slide Indicators Style Apple */}
+          <div className="flex items-center justify-center gap-2">
             {slides.map((_, index) => (
               <button
                 key={index}
                 onClick={() => goToSlide(index)}
-                className={`w-3 h-3 rounded-full transition-all ${
-                  index === currentSlide ? "bg-blue-600 scale-125" : "bg-gray-300 dark:bg-gray-600 hover:bg-gray-400"
+                className={`w-2 h-2 rounded-full transition-all duration-200 ${
+                  index === currentSlide ? "bg-[#007AFF] scale-125" : "bg-[#E5E5EA] dark:bg-[#2C2C2E] hover:bg-[#8E8E93]"
                 }`}
               />
             ))}
@@ -216,29 +226,33 @@ export function AppPresentation({ userType, onComplete }: AppPresentationProps) 
 
           <Button
             onClick={nextSlide}
-            className={`${
+            className={`h-11 px-6 rounded-xl font-medium transition-all duration-200 ${
               currentSlide === slides.length - 1
-                ? "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
-                : "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-            } text-white`}
+                ? "bg-[#34C759] hover:bg-[#2FB344] text-white"
+                : "bg-[#007AFF] hover:bg-[#0051D5] text-white"
+            }`}
           >
             {currentSlide === slides.length - 1 ? (
               <>
-                Commencer
+                <span>Commencer</span>
                 <CheckCircle className="h-4 w-4 ml-2" />
               </>
             ) : (
               <>
-                Suivant
+                <span>Suivant</span>
                 <ChevronRight className="h-4 w-4 ml-2" />
               </>
             )}
           </Button>
         </div>
 
-        {/* Skip Button */}
+        {/* Skip Button Style Apple */}
         <div className="text-center mt-6">
-          <Button variant="ghost" onClick={onComplete} className="text-gray-500 hover:text-gray-700">
+          <Button 
+            variant="ghost" 
+            onClick={onComplete} 
+            className="text-[#8E8E93] hover:text-[#007AFF] hover:bg-[#F2F2F7] dark:hover:bg-[#2C2C2E] rounded-xl h-11 px-6"
+          >
             Passer l'introduction
           </Button>
         </div>

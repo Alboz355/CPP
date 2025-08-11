@@ -53,74 +53,81 @@ export function RealTimePrices() {
   }
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-lg font-semibold">Prix Temps Réel ({currency})</CardTitle>
-          <div className="flex items-center space-x-2">
-            {lastUpdate && <span className="text-xs text-muted-foreground">{lastUpdate.toLocaleTimeString()}</span>}
-            <Button variant="outline" size="sm" onClick={fetchPrices} disabled={loading}>
-              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-            </Button>
+    <Card className="apple-card">
+      <CardHeader className="apple-card-header">
+        <CardTitle className="apple-card-title">
+          <div className="p-2 bg-[#F2F2F7] dark:bg-[#2C2C2E] rounded-lg">
+            <TrendingUp className="h-5 w-5 text-[#007AFF]" />
           </div>
+          Prix en Temps Réel
+        </CardTitle>
+        <div className="flex items-center space-x-2">
+          {lastUpdate && <span className="text-sm text-[#8E8E93]">{lastUpdate.toLocaleTimeString()}</span>}
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={fetchPrices} 
+            disabled={loading}
+            className="h-8 w-8 bg-[#FFFFFF] dark:bg-[#1C1C1E] border-[#E5E5EA] dark:border-[#38383A] hover:bg-[#F2F2F7] dark:hover:bg-[#2C2C2E] rounded-lg"
+          >
+            <RefreshCw className={`h-4 w-4 text-[#007AFF] ${loading ? "animate-spin" : ""}`} />
+          </Button>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-          {loading && prices.length === 0 ? (
-            <div className="space-y-3">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="flex items-center justify-between p-3 bg-muted rounded-lg animate-pulse">
-                  <div className="flex items-center space-x-3">
-                    <div className="h-8 w-8 bg-gray-300 rounded-full"></div>
-                    <div>
-                      <div className="h-4 w-16 bg-gray-300 rounded mb-1"></div>
-                      <div className="h-3 w-12 bg-gray-300 rounded"></div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="h-4 w-20 bg-gray-300 rounded mb-1"></div>
-                    <div className="h-3 w-16 bg-gray-300 rounded"></div>
+      <CardContent className="apple-card-content">
+        {loading && prices.length === 0 ? (
+          <div className="space-y-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="flex items-center justify-between p-4 bg-[#F2F2F7] dark:bg-[#2C2C2E] rounded-xl border border-[#E5E5EA] dark:border-[#38383A] animate-pulse">
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-[#E5E5EA] dark:bg-[#38383A] rounded-full"></div>
+                  <div className="space-y-2">
+                    <div className="h-4 bg-[#E5E5EA] dark:bg-[#38383A] rounded w-16"></div>
+                    <div className="h-3 bg-[#E5E5EA] dark:bg-[#38383A] rounded w-12"></div>
                   </div>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {prices.map((crypto) => (
-                <div
-                  key={crypto.id}
-                  className="flex items-center justify-between p-3 bg-muted rounded-lg hover:bg-muted/80 transition-colors"
-                >
-                  <div className="flex items-center space-x-3">
-                    <div className="text-primary">{getCryptoIcon(crypto.symbol)}</div>
-                    <div>
-                      <div className="font-semibold text-sm">{crypto.symbol.toUpperCase()}</div>
-                      <div className="text-xs text-muted-foreground">{crypto.name}</div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-semibold text-sm">{formatPrice(crypto.current_price)}</div>
-                    <div className="flex items-center justify-end space-x-1">
-                      {crypto.price_change_percentage_24h >= 0 ? (
-                        <TrendingUp className="h-3 w-3 text-green-600" />
-                      ) : (
-                        <TrendingDown className="h-3 w-3 text-red-600" />
-                      )}
-                      <span
-                        className={`text-xs font-medium ${
-                          crypto.price_change_percentage_24h >= 0 ? "text-green-600" : "text-red-600"
-                        }`}
-                      >
-                        {formatChange(crypto.price_change_percentage_24h)}
-                      </span>
-                    </div>
+                <div className="text-right space-y-2">
+                  <div className="h-4 bg-[#E5E5EA] dark:bg-[#38383A] rounded w-20"></div>
+                  <div className="h-3 bg-[#E5E5EA] dark:bg-[#38383A] rounded w-16"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {prices.map((crypto) => (
+              <div
+                key={crypto.id}
+                className="flex items-center justify-between p-4 bg-[#F2F2F7] dark:bg-[#2C2C2E] rounded-xl border border-[#E5E5EA] dark:border-[#38383A] hover:bg-[#E5E5EA] dark:hover:bg-[#38383A] transition-colors"
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="text-[#007AFF]">{getCryptoIcon(crypto.symbol)}</div>
+                  <div>
+                    <div className="font-semibold text-sm text-[#000000] dark:text-[#FFFFFF]">{crypto.symbol.toUpperCase()}</div>
+                    <div className="text-xs text-[#8E8E93]">{crypto.name}</div>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
+                <div className="text-right">
+                  <div className="font-semibold text-sm text-[#000000] dark:text-[#FFFFFF]">{formatPrice(crypto.current_price)}</div>
+                  <div className="flex items-center justify-end space-x-1 mt-1">
+                    {crypto.price_change_percentage_24h >= 0 ? (
+                      <TrendingUp className="h-3 w-3 text-[#34C759]" />
+                    ) : (
+                      <TrendingDown className="h-3 w-3 text-[#FF3B30]" />
+                    )}
+                    <span
+                      className={`text-xs font-medium ${
+                        crypto.price_change_percentage_24h >= 0 ? "text-[#34C759]" : "text-[#FF3B30]"
+                      }`}
+                    >
+                      {formatChange(crypto.price_change_percentage_24h)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   )

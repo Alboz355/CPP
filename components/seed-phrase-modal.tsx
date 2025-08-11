@@ -87,7 +87,7 @@ export function SeedPhraseModal({ isOpen, onClose, seedPhrase, onShowSupport }: 
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
       <Card className="w-full max-w-2xl max-h-[90vh] overflow-hidden">
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-center">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-red-100 dark:bg-red-500/10 rounded-full flex items-center justify-center">
                 <Shield className="h-5 w-5 text-red-600 dark:text-red-400" />
@@ -107,9 +107,6 @@ export function SeedPhraseModal({ isOpen, onClose, seedPhrase, onShowSupport }: 
                 </CardDescription>
               </div>
             </div>
-            <Button variant="ghost" size="icon" onClick={onClose}>
-              <X className="h-4 w-4" />
-            </Button>
           </div>
         </CardHeader>
 

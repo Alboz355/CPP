@@ -11,6 +11,7 @@ import { ArrowLeft, QrCode, Copy, Printer, RefreshCw, CheckCircle, Clock } from 
 import { useToast } from "@/hooks/use-toast"
 import { cryptoService } from "@/lib/crypto-prices"
 import type { AppState } from "@/app/page"
+import { generateQrDataUrl } from "@/lib/qr"
 
 interface TPEPaymentPageProps {
   onNavigate: (page: AppState) => void
@@ -133,9 +134,8 @@ export function TPEPaymentPage({ onNavigate, onBack, walletData }: TPEPaymentPag
       }
     }
 
-    // Generate QR code with proper crypto URI
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrData)}&bgcolor=FFFFFF&color=000000&margin=10`
-    setQrCodeUrl(qrUrl)
+    // Génération locale du QR
+    generateQrDataUrl(qrData, 300).then(setQrCodeUrl)
   }
 
   const copyToClipboard = async (text: string, label: string) => {

@@ -9,6 +9,7 @@ import { X, Shield, AlertCircle, Key, Fingerprint, Loader2 } from 'lucide-react'
 import { SecurityManager } from "@/lib/security-manager"
 import { PinResetModal } from "./pin-reset-modal"
 import { useToast } from "@/hooks/use-toast"
+import { verifyPin as verifyHashedPin } from "@/lib/pin-utils"
 
 interface PinVerificationModalProps {
   isOpen: boolean
@@ -133,19 +134,21 @@ export function PinVerificationModal({
       setError("")
 
       setTimeout(() => {
-        const storedPin = localStorage.getItem("pin-hash")
-        if (storedPin && btoa(pin) === storedPin) {
+        // Vérification sécurisée via WebCrypto
+        verifyHashedPin(pin).then((ok) => {
+          if (ok) {
           toast({
             title: "PIN correct",
             description: "Authentification réussie",
           })
           onVerified()
           handleClose()
-        } else {
+          } else {
           setError("Code PIN incorrect")
           setShowBackupOption(true)
-        }
-        setIsVerifying(false)
+          }
+          setIsVerifying(false)
+        })
       }, 500)
     }
   }
@@ -192,7 +195,7 @@ export function PinVerificationModal({
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[9999] ios-modal-safe">
         <Card className="w-full max-w-md bg-card dark:bg-card card-ios mx-4" style={{ filter: 'none !important' }}>
           <CardHeader className="ios-header-safe">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-center">
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 bg-blue-100 dark:bg-blue-500/10 rounded-full flex items-center justify-center">
                   <Shield className="h-5 w-5 text-blue-600 dark:text-blue-400" />
@@ -202,11 +205,6 @@ export function PinVerificationModal({
                   <CardDescription>{description}</CardDescription>
                 </div>
               </div>
-              {reason !== 'initial' && (
-                <Button variant="ghost" size="icon" onClick={handleClose} className="btn-ios">
-                  <X className="h-4 w-4" />
-                </Button>
-              )}
             </div>
           </CardHeader>
 

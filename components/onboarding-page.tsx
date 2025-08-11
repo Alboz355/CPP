@@ -23,6 +23,7 @@ import {
 } from "lucide-react"
 import { UserTypeSelection } from "@/components/user-type-selection"
 import { generateWallet, importWallet, validateMnemonic } from "@/lib/wallet-utils"
+import { createOrLoadMnemonic, deriveAddresses } from "@/lib/wallet-real"
 import { useLanguage } from "@/contexts/language-context"
 
 export type UserType = "client" | "merchant"
@@ -37,11 +38,13 @@ interface WalletData {
     bitcoin: string
     ethereum: string
     algorand: string
+    solana: string
   }
   balances: {
     bitcoin: string
     ethereum: string
     algorand: string
+    solana: string
   }
   accounts: any[]
 }
@@ -69,40 +72,46 @@ export function OnboardingPage({ onWalletCreated }: OnboardingPageProps) {
     setSuccess(null)
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      // Use the new generateWallet function with Trust Wallet Core-like implementation
-      const wallet = generateWallet()
+      const mnemonic = await createOrLoadMnemonic()
+      const addresses = await deriveAddresses(mnemonic)
 
       const walletData: WalletData = {
-        mnemonic: wallet.mnemonic,
-        addresses: wallet.addresses,
+        mnemonic: mnemonic,
+        addresses: addresses as any,
         balances: {
           bitcoin: "0.00000000",
           ethereum: "0.000000000000000000",
           algorand: "0.000000",
+          solana: "0.000000",
         },
         accounts: [
           {
             id: "btc-account",
             name: "Bitcoin Principal",
-            address: wallet.addresses.bitcoin,
+            address: addresses.bitcoin,
             balance: "0.00000000",
             currency: "BTC",
           },
           {
             id: "eth-account",
             name: "Ethereum Principal",
-            address: wallet.addresses.ethereum,
+            address: addresses.ethereum,
             balance: "0.000000000000000000",
             currency: "ETH",
           },
           {
             id: "algo-account",
             name: "Algorand Principal",
-            address: wallet.addresses.algorand,
+            address: addresses.algorand,
             balance: "0.000000",
             currency: "ALGO",
+          },
+          {
+            id: "sol-account",
+            name: "Solana Principal",
+            address: (addresses as any).solana,
+            balance: "0.000000",
+            currency: "SOL",
           },
         ],
       }
@@ -129,40 +138,47 @@ export function OnboardingPage({ onWalletCreated }: OnboardingPageProps) {
     setSuccess(null)
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      // Use the new importWallet function with Trust Wallet Core-like implementation
-      const wallet = importWallet(importSeedPhrase)
+      // Enregistrer la mnemonic importée et dériver les adresses
+      const mnemonic = importSeedPhrase.trim()
+      const addresses = await deriveAddresses(mnemonic)
 
       const walletData: WalletData = {
-        mnemonic: wallet.mnemonic,
-        addresses: wallet.addresses,
+        mnemonic: mnemonic,
+        addresses: addresses as any,
         balances: {
           bitcoin: "0.00000000",
           ethereum: "0.000000000000000000",
           algorand: "0.000000",
+          solana: "0.000000",
         },
         accounts: [
           {
             id: "btc-account",
             name: "Bitcoin Principal",
-            address: wallet.addresses.bitcoin,
+            address: addresses.bitcoin,
             balance: "0.00000000",
             currency: "BTC",
           },
           {
             id: "eth-account",
             name: "Ethereum Principal",
-            address: wallet.addresses.ethereum,
+            address: addresses.ethereum,
             balance: "0.000000000000000000",
             currency: "ETH",
           },
           {
             id: "algo-account",
             name: "Algorand Principal",
-            address: wallet.addresses.algorand,
+            address: addresses.algorand,
             balance: "0.000000",
             currency: "ALGO",
+          },
+          {
+            id: "sol-account",
+            name: "Solana Principal",
+            address: (addresses as any).solana,
+            balance: "0.000000",
+            currency: "SOL",
           },
         ],
       }

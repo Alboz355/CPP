@@ -2,6 +2,71 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Styles de boutons améliorés pour toute l'app */
+@layer components {
+  /* Bouton primaire */
+  .btn-primary {
+    @apply bg-[#007AFF] text-white font-medium px-6 py-3 rounded-xl;
+    @apply hover:bg-[#0051D5] active:scale-[0.98];
+    @apply transition-all duration-200;
+    @apply shadow-sm hover:shadow-lg;
+    @apply disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply flex items-center justify-center gap-2;
+  }
+
+  /* Bouton secondaire */
+  .btn-secondary {
+    @apply bg-[#FFFFFF] dark:bg-[#1C1C1E] text-[#007AFF];
+    @apply border border-[#E5E5EA] dark:border-[#38383A];
+    @apply font-medium px-6 py-3 rounded-xl;
+    @apply hover:bg-[#F2F2F7] dark:hover:bg-[#2C2C2E];
+    @apply hover:border-[#007AFF] dark:hover:border-[#007AFF];
+    @apply active:scale-[0.98] transition-all duration-200;
+    @apply shadow-sm hover:shadow-md;
+    @apply flex items-center justify-center gap-2;
+  }
+
+  /* Bouton icône */
+  .btn-icon {
+    @apply w-11 h-11 flex items-center justify-center;
+    @apply bg-[#FFFFFF] dark:bg-[#1C1C1E];
+    @apply border border-[#E5E5EA] dark:border-[#38383A];
+    @apply rounded-xl hover:bg-[#F2F2F7] dark:hover:bg-[#2C2C2E];
+    @apply hover:border-[#007AFF] dark:hover:border-[#007AFF];
+    @apply transition-all duration-200;
+    @apply active:scale-[0.98];
+  }
+
+  /* Bouton action (grand) */
+  .btn-action {
+    @apply flex flex-col items-center justify-center gap-2;
+    @apply min-h-[96px] p-4 rounded-2xl;
+    @apply bg-[#FFFFFF] dark:bg-[#1C1C1E];
+    @apply border border-[#E5E5EA] dark:border-[#38383A];
+    @apply hover:bg-[#F2F2F7] dark:hover:bg-[#2C2C2E];
+    @apply hover:border-[#007AFF] dark:hover:border-[#007AFF];
+    @apply transition-all duration-200;
+    @apply active:scale-[0.98];
+  }
+
+  .btn-action:hover svg {
+    @apply scale-110 transition-transform duration-200;
+  }
+
+  /* Formatage des soldes */
+  .balance-display {
+    @apply font-mono tabular-nums tracking-tight;
+  }
+
+  .balance-zero {
+    @apply text-[#8E8E93];
+  }
+
+  .balance-positive {
+    @apply text-[#000000] dark:text-[#FFFFFF] font-semibold;
+  }
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -35,6 +100,18 @@
     --safe-area-inset-right: env(safe-area-inset-right);
     --safe-area-inset-bottom: env(safe-area-inset-bottom);
     --safe-area-inset-left: env(safe-area-inset-left);
+
+    /* Apple Design System Colors */
+    --apple-blue: 204 100% 50%;
+    --apple-green: 142 70% 45%;
+    --apple-orange: 30 100% 50%;
+    --apple-red: 0 100% 50%;
+    --apple-gray-1: 0 0% 95%;
+    --apple-gray-2: 0 0% 90%;
+    --apple-gray-3: 0 0% 85%;
+    --apple-gray-4: 0 0% 55%;
+    --apple-gray-5: 0 0% 45%;
+    --apple-gray-6: 0 0% 35%;
   }
 
   .dark {
@@ -62,6 +139,18 @@
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
+
+    /* Apple Design System Colors - Dark */
+    --apple-blue: 204 100% 60%;
+    --apple-green: 142 70% 55%;
+    --apple-orange: 30 100% 60%;
+    --apple-red: 0 100% 60%;
+    --apple-gray-1: 0 0% 15%;
+    --apple-gray-2: 0 0% 20%;
+    --apple-gray-3: 0 0% 25%;
+    --apple-gray-4: 0 0% 45%;
+    --apple-gray-5: 0 0% 55%;
+    --apple-gray-6: 0 0% 65%;
   }
 }
 
@@ -97,6 +186,58 @@ body {
   min-height: 100dvh;
   /* Prevent horizontal scroll */
   overflow-x: hidden;
+}
+
+/* Hide scrollbars */
+::-webkit-scrollbar {
+  display: none;
+}
+
+* {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Focus mode toggle button - Apple-like lens effect */
+.focus-mode-toggle {
+  position: fixed;
+  bottom: calc(var(--safe-area-inset-bottom) + 2rem);
+  left: 2rem;
+  z-index: 50;
+  background: rgba(0, 0, 0, 0.08);
+  backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 50%;
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 
+    0 4px 12px rgba(0, 0, 0, 0.1),
+    0 2px 4px rgba(0, 0, 0, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.focus-mode-toggle:hover {
+  background: rgba(0, 0, 0, 0.12);
+  transform: scale(1.05);
+  box-shadow: 
+    0 8px 24px rgba(0, 0, 0, 0.15),
+    0 4px 8px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.focus-mode-toggle:active {
+  transform: scale(0.95);
+  transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Dark mode improvements */
+@media (prefers-color-scheme: dark) {
+  /* Focus mode toggle styles are already defined above with Apple lens effect */
 }
 
 /* iOS Safe Area Classes */
@@ -210,8 +351,7 @@ input[inputmode="numeric"] {
   }
 }
 
-/* Focus Mode - Hide sensitive data */
-.focus-mode .sensitive-data,
+/* Focus Mode - Hide sensitive data ONLY when focus mode is active */
 body.focus-mode .sensitive-data {
   filter: blur(8px);
   transition: filter 0.3s ease;
@@ -219,7 +359,6 @@ body.focus-mode .sensitive-data {
   pointer-events: none;
 }
 
-.focus-mode .balance-amount,
 body.focus-mode .balance-amount {
   filter: blur(8px);
   transition: filter 0.3s ease;
@@ -227,7 +366,6 @@ body.focus-mode .balance-amount {
   pointer-events: none;
 }
 
-.focus-mode .transaction-amount,
 body.focus-mode .transaction-amount {
   filter: blur(6px);
   transition: filter 0.3s ease;
@@ -235,124 +373,113 @@ body.focus-mode .transaction-amount {
   pointer-events: none;
 }
 
-/* Focus mode toggle button */
-.focus-mode-toggle {
-  position: fixed;
-  top: calc(var(--safe-area-inset-top) + 1rem);
-  right: 1rem;
-  z-index: 50;
-  background: rgba(0, 0, 0, 0.1);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 50%;
-  width: 44px;
-  height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
+/* Ensure normal display when focus mode is NOT active */
+body:not(.focus-mode) .sensitive-data,
+body:not(.focus-mode) .balance-amount,
+body:not(.focus-mode) .transaction-amount {
+  filter: none;
+  user-select: auto;
+  pointer-events: auto;
 }
 
-.focus-mode-toggle:hover {
-  background: rgba(0, 0, 0, 0.2);
-  transform: scale(1.05);
+/* Simple solution: Dark text in light mode, white text in dark mode */
+.balance-amount.adaptive-text {
+  color: #000000 !important;
 }
 
-/* Enhanced animations */
-.card-hover {
-  transition: all 0.2s ease;
+.dark .balance-amount.adaptive-text {
+  color: #ffffff !important;
 }
 
-.card-hover:hover {
+/* Override focus mode when not active */
+body:not(.focus-mode) .balance-amount.adaptive-text {
+  filter: none !important;
+}
+
+/* Apple Design System - Unified Styles */
+.apple-card {
+  @apply bg-[#FFFFFF] dark:bg-[#1C1C1E] border border-[#E5E5EA] dark:border-[#38383A] rounded-2xl shadow-sm;
+}
+
+.apple-card-header {
+  @apply pb-4;
+}
+
+.apple-card-title {
+  @apply text-lg font-semibold text-[#000000] dark:text-[#FFFFFF] flex items-center gap-3;
+}
+
+.apple-card-content {
+  @apply space-y-4;
+}
+
+/* Apple Micro-interactions */
+.apple-hover {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.apple-hover:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
 }
 
-.button-press {
-  transition: all 0.1s ease;
+.apple-press {
+  transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.button-press:active {
+.apple-press:active {
   transform: scale(0.98);
 }
 
-.btn-enhanced {
-  position: relative;
-  overflow: hidden;
+/* Apple-like Switch Styles - EXACT REPLICA */
+[data-radix-switch-root] {
+  height: 32px !important;
+  width: 52px !important;
+  transition: all 0.2s ease-out !important;
+  border-radius: 16px !important;
+  border: none !important;
+  position: relative !important;
+  background-color: #E5E5EA !important;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.04) !important;
 }
 
-.btn-enhanced::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 0;
-  height: 0;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  transition: width 0.3s ease, height 0.3s ease;
+[data-radix-switch-root][data-state="checked"] {
+  background-color: #34C759 !important;
+  box-shadow: inset 0 0 0 1px rgba(52, 199, 89, 0.1) !important;
 }
 
-.btn-enhanced:active::before {
-  width: 300px;
-  height: 300px;
+[data-radix-switch-root][data-state="unchecked"] {
+  background-color: #E5E5EA !important;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.04) !important;
 }
 
-/* PWA specific styles */
-@media (display-mode: standalone) {
-  body {
-    /* Hide browser UI when installed as PWA */
-    -webkit-user-select: none;
-    user-select: none;
-  }
-  
-  /* Allow text selection in inputs */
-  input, textarea {
-    -webkit-user-select: text;
-    user-select: text;
-  }
+.dark [data-radix-switch-root][data-state="unchecked"] {
+  background-color: #39393D !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04) !important;
 }
 
-/* Landscape orientation adjustments */
-@media (orientation: landscape) and (max-height: 500px) {
-  .ios-content-safe {
-    padding-top: var(--safe-area-inset-top);
-    padding-left: max(1rem, var(--safe-area-inset-left));
-    padding-right: max(1rem, var(--safe-area-inset-right));
-  }
+[data-radix-switch-thumb] {
+  height: 28px !important;
+  width: 28px !important;
+  border-radius: 14px !important;
+  transition: all 0.2s ease-out !important;
+  background-color: #FFFFFF !important;
+  border: none !important;
+  box-shadow: 
+    0 3px 8px rgba(0, 0, 0, 0.15),
+    0 3px 1px rgba(0, 0, 0, 0.06) !important;
 }
 
-/* Dark mode improvements */
-@media (prefers-color-scheme: dark) {
-  .focus-mode-toggle {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.2);
-  }
-  
-  .focus-mode-toggle:hover {
-    background: rgba(255, 255, 255, 0.2);
-  }
+[data-radix-switch-root][data-state="checked"] [data-radix-switch-thumb] {
+  transform: translateX(20px) !important;
+  box-shadow: 
+    0 3px 8px rgba(0, 0, 0, 0.15),
+    0 3px 1px rgba(0, 0, 0, 0.06) !important;
 }
 
-/* Accessibility improvements */
-@media (prefers-reduced-motion: reduce) {
-  .page-fade-enter,
-  .page-hidden,
-  .card-hover,
-  .button-press,
-  .btn-enhanced::before {
-    animation: none !important;
-    transition: none !important;
-  }
-}
-
-/* High contrast mode */
-@media (prefers-contrast: high) {
-  .focus-mode .sensitive-data,
-  .focus-mode .balance-amount,
-  .focus-mode .transaction-amount {
-    filter: blur(10px) contrast(2);
-  }
+[data-radix-switch-root][data-state="unchecked"] [data-radix-switch-thumb] {
+  transform: translateX(2px) !important;
+  box-shadow: 
+    0 3px 8px rgba(0, 0, 0, 0.15),
+    0 3px 1px rgba(0, 0, 0, 0.06) !important;
 }

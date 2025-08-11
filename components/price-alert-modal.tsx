@@ -166,14 +166,11 @@ export function PriceAlertModal({ isOpen, onClose }: PriceAlertModalProps) {
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-center">
             <DialogTitle className="flex items-center space-x-2">
               <Bell className="h-5 w-5 text-orange-500" />
               <span>Alertes de Prix</span>
             </DialogTitle>
-            <Button variant="ghost" size="sm" onClick={onClose}>
-              <X className="h-4 w-4" />
-            </Button>
           </div>
         </DialogHeader>
 
