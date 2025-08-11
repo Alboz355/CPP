@@ -71,31 +71,121 @@ export function MainDashboard({ userType, onNavigate, walletData, onShowMtPeleri
     }
   }, [focusMode])
   
-  // Utiliser les vraies données du wallet
+  // Utiliser les vraies données du wallet avec calcul en temps réel
   const dashboardData = useMemo(() => {
-    // Récupérer les soldes individuels (ils sont déjà en unités de crypto)
-    const btcBalance = walletData?.balances?.bitcoin || 0
-    const ethBalance = walletData?.balances?.ethereum || 0
-    const algoBalance = walletData?.balances?.algorand || 0
-    const solBalance = walletData?.balances?.solana || 0
-    
-    // Pour le moment, on affiche 0 CHF si pas de données de prix
-    // Plus tard, on intégrera les vrais taux de change
-    const totalBalance = 0 // Toujours afficher 0 CHF en attendant l'intégration des prix réels
+    // Données par défaut
+    let totalBalance = 0
+    let totalBalanceFormatted = 'CHF 0.00'
+    let isLoading = true
     
     return {
       totalBalance,
-      btcBalance,
-      ethBalance,
-      algoBalance,
-      solBalance,
-      monthlyChange: 0, // Sera calculé avec l'historique réel
+      totalBalanceFormatted,
+      isLoading,
+      btcBalance: walletData?.balances?.bitcoin || 0,
+      ethBalance: walletData?.balances?.ethereum || 0,
+      algoBalance: walletData?.balances?.algorand || 0,
+      solBalance: walletData?.balances?.solana || 0,
+      monthlyChange: 0,
       monthlyTransactions: 0,
       monthlyVolume: 0,
       monthlyGoal: 0,
       clientsCount: 0
     }
   }, [walletData])
+
+  // État pour les vraies données calculées
+  const [realTimeBalance, setRealTimeBalance] = useState<{
+    total: number
+    formatted: string
+    breakdown: any
+    lastUpdated?: string
+    isLoading: boolean
+    error?: string
+  }>({
+    total: 0,
+    formatted: 'CHF 0.00',
+    breakdown: {},
+    isLoading: true
+  })
+
+  // Fonction pour récupérer le vrai solde total
+  const fetchRealBalance = useCallback(async () => {
+    if (!walletData?.addresses) {
+      console.warn('⚠️ Pas d\'adresses disponibles pour calculer le solde')
+      setRealTimeBalance(prev => ({ ...prev, isLoading: false }))
+      return
+    }
+
+    try {
+      console.log('🔄 Récupération solde total en temps réel...')
+      setRealTimeBalance(prev => ({ ...prev, isLoading: true, error: undefined }))
+
+      const response = await fetch('/api/wallet-balance', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          addresses: walletData.addresses,
+          currency: 'CHF'
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error(`Erreur API: ${response.status}`)
+      }
+
+      const result = await response.json()
+      
+      if (result.success && result.data) {
+        const { stats, breakdown } = result.data
+        
+        setRealTimeBalance({
+          total: stats.totalValue,
+          formatted: stats.totalValueFormatted,
+          breakdown,
+          lastUpdated: stats.lastUpdated,
+          isLoading: false
+        })
+        
+        console.log(`✅ Solde total calculé: ${stats.totalValueFormatted}`)
+      } else {
+        throw new Error(result.error || 'Erreur de calcul du solde')
+      }
+    } catch (error) {
+      console.error('❌ Erreur calcul solde:', error)
+      setRealTimeBalance(prev => ({
+        ...prev,
+        isLoading: false,
+        error: error instanceof Error ? error.message : 'Erreur inconnue'
+      }))
+    }
+  }, [walletData])
+
+  // Charger le solde au montage et refresh périodique
+  useEffect(() => {
+    // Chargement initial avec délai pour éviter le spam
+    const timer = setTimeout(() => {
+      fetchRealBalance()
+    }, 1000)
+
+    // Refresh périodique (toutes les 2 minutes)
+    const interval = setInterval(fetchRealBalance, 2 * 60 * 1000)
+
+    return () => {
+      clearTimeout(timer)
+      clearInterval(interval)
+    }
+  }, [fetchRealBalance])
+
+  // Fonction de refresh manuel
+  const handleRefreshBalance = useCallback(async () => {
+    setIsRefreshing(true)
+    await fetchRealBalance()
+    // Petit délai pour l'UX
+    setTimeout(() => setIsRefreshing(false), 1000)
+  }, [fetchRealBalance])
 
   interface Transaction {
     id: string
@@ -131,10 +221,10 @@ export function MainDashboard({ userType, onNavigate, walletData, onShowMtPeleri
 
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true)
-    // Simulate refresh
-    await new Promise(resolve => setTimeout(resolve, 1500))
-    setIsRefreshing(false)
-  }, [])
+    await fetchRealBalance()
+    // Petit délai pour l'UX
+    setTimeout(() => setIsRefreshing(false), 1000)
+  }, [fetchRealBalance])
 
   const formatTimeAgo = useCallback((date: Date) => {
     const now = new Date()
@@ -250,22 +340,50 @@ export function MainDashboard({ userType, onNavigate, walletData, onShowMtPeleri
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-[#8E8E93] mb-2 text-sm font-medium" id="balance-title">{t.dashboard.totalBalance}</p>
-                  <p className={`text-4xl font-bold balance-display balance-zero ${focusMode ? 'sensitive-data' : ''}`} 
-                     aria-live="polite">
-                    CHF 0.00
-                  </p>
+                  {realTimeBalance.isLoading ? (
+                    <div className="flex items-center gap-3">
+                      <Loader2 className="h-6 w-6 animate-spin text-[#007AFF]" aria-hidden="true" />
+                      <span className="text-2xl font-medium text-[#8E8E93]">Calcul en cours...</span>
+                    </div>
+                  ) : realTimeBalance.error ? (
+                    <div className="flex flex-col gap-2">
+                      <p className="text-2xl font-medium text-[#FF3B30]">Erreur calcul</p>
+                      <p className="text-xs text-[#8E8E93]">{realTimeBalance.error}</p>
+                    </div>
+                  ) : (
+                    <p className={`text-4xl font-bold balance-display ${realTimeBalance.total > 0 ? 'balance-positive' : 'balance-zero'} ${focusMode ? 'sensitive-data' : ''}`} 
+                       aria-live="polite">
+                      {realTimeBalance.formatted}
+                    </p>
+                  )}
                   <div className="flex items-center gap-2 mt-3" role="status" aria-live="polite">
                     <TrendingUp className="h-4 w-4 text-[#8E8E93]" aria-hidden="true" />
                     <span className="text-sm text-[#8E8E93] font-medium">
-                      0.00% {t.time.thisMonth}
+                      {realTimeBalance.lastUpdated ? 
+                        `Mis à jour: ${new Date(realTimeBalance.lastUpdated).toLocaleTimeString('fr-CH', { hour: '2-digit', minute: '2-digit' })}` :
+                        '0.00% ' + t.time.thisMonth
+                      }
                     </span>
                   </div>
                 </div>
-                <div className="text-right">
+                <div className="text-center">
                   <Avatar className="h-16 w-16 mb-2 border-2 border-[#E5E5EA] dark:border-[#38383A]">
-                    <AvatarImage src="/placeholder-user.jpg" alt="Photo de profil utilisateur" />
+                    <AvatarImage src="/placeholder-logo.png" alt="CryptoWallet" />
                     <AvatarFallback className="bg-[#F2F2F7] dark:bg-[#2C2C2E] text-[#000000] dark:text-[#FFFFFF] font-semibold">CW</AvatarFallback>
                   </Avatar>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={handleRefreshBalance}
+                    disabled={isRefreshing || realTimeBalance.isLoading}
+                    className="text-[#007AFF] hover:bg-[#F2F2F7] dark:hover:bg-[#2C2C2E] rounded-xl flex items-center gap-2"
+                  >
+                    {isRefreshing || realTimeBalance.isLoading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <span className="text-xs">Actualiser</span>
+                    )}
+                  </Button>
                 </div>
               </div>
             </CardContent>

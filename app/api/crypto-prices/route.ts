@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { CMC_API_KEY } from '@/lib/config'
 
-// Rate limiting simple (en production, utiliser Redis ou une solution plus robuste)
+// Rate limiting
 const rateLimit = new Map<string, { count: number; resetTime: number }>()
-
 const RATE_LIMIT_WINDOW = 60 * 1000 // 1 minute
 const MAX_REQUESTS_PER_WINDOW = 10
 
@@ -48,9 +47,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Service temporarily unavailable' }, { status: 503 })
     }
 
-    // Récupérer les données depuis CoinMarketCap
+    console.log('🚀 Récupération des prix réels depuis CoinMarketCap...')
+
+    // Récupérer les données RÉELLES depuis CoinMarketCap avec conversion en CHF
+    const symbols = ['BTC', 'ETH', 'ALGO', 'SOL']
     const response = await fetch(
-      'https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest?limit=50&convert=USD',
+      `https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?symbol=${symbols.join(',')}&convert=CHF`,
       {
         headers: {
           'X-CMC_PRO_API_KEY': CMC_API_KEY,
@@ -61,22 +63,46 @@ export async function GET(request: NextRequest) {
     )
 
     if (!response.ok) {
+      console.error('Erreur CoinMarketCap:', response.status, response.statusText)
       throw new Error(`CoinMarketCap API error: ${response.status}`)
     }
 
     const data = await response.json()
-    
-    // Filtrer les données sensibles et retourner seulement ce qui est nécessaire
-    const filteredData = data.data.map((crypto: any) => ({
-      id: crypto.id,
-      name: crypto.name,
-      symbol: crypto.symbol,
-      current_price: crypto.quote.USD.price,
-      market_cap: crypto.quote.USD.market_cap,
-      price_change_percentage_24h: crypto.quote.USD.percent_change_24h,
-      last_updated: crypto.last_updated,
-      // Ne pas inclure de données sensibles ou métadonnées internes
-    }))
+    console.log('✅ Données reçues de CoinMarketCap')
+
+    // Mapping des symboles vers les infos complètes
+    const cryptoInfo = {
+      'BTC': { id: 'bitcoin', name: 'Bitcoin', image: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1.png' },
+      'ETH': { id: 'ethereum', name: 'Ethereum', image: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1027.png' },
+      'ALGO': { id: 'algorand', name: 'Algorand', image: 'https://s2.coinmarketcap.com/static/img/coins/64x64/4030.png' },
+      'SOL': { id: 'solana', name: 'Solana', image: 'https://s2.coinmarketcap.com/static/img/coins/64x64/5426.png' }
+    }
+
+    // Transformer les données CoinMarketCap en format attendu
+    const filteredData = symbols.map(symbol => {
+      const coinData = data.data[symbol]
+      const info = cryptoInfo[symbol as keyof typeof cryptoInfo]
+      
+      if (!coinData || !coinData.quote?.CHF) {
+        console.warn(`Données manquantes pour ${symbol}`)
+        return null
+      }
+
+      const quote = coinData.quote.CHF
+      
+      return {
+        id: info.id,
+        name: info.name,
+        symbol: symbol,
+        current_price: quote.price,
+        market_cap: quote.market_cap,
+        price_change_percentage_24h: quote.percent_change_24h,
+        last_updated: coinData.last_updated,
+        image: info.image
+      }
+    }).filter(Boolean) // Supprimer les valeurs null
+
+    console.log(`✅ ${filteredData.length} cryptomonnaies traitées avec succès`)
 
     // Headers de sécurité
     const headers = new Headers({
@@ -93,21 +119,29 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ 
       data: filteredData,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      source: 'coinmarketcap',
+      currency: 'CHF'
     }, { headers })
 
   } catch (error) {
-    console.error('Erreur API crypto-prices:', error)
+    console.error('❌ Erreur API crypto-prices:', error)
     
-    // Ne pas exposer les détails de l'erreur en production
-    const errorMessage = process.env.NODE_ENV === 'development' 
-      ? error instanceof Error ? error.message : 'Unknown error'
-      : 'Internal server error'
+    // En cas d'erreur, retourner des données de fallback pour ne pas casser l'app
+    const fallbackData = [
+      { id: 'bitcoin', symbol: 'BTC', name: 'Bitcoin', current_price: 59000, market_cap: 1150000000000, price_change_percentage_24h: 2.5, image: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1.png' },
+      { id: 'ethereum', symbol: 'ETH', name: 'Ethereum', current_price: 2900, market_cap: 350000000000, price_change_percentage_24h: 1.8, image: 'https://s2.coinmarketcap.com/static/img/coins/64x64/1027.png' },
+      { id: 'algorand', symbol: 'ALGO', name: 'Algorand', current_price: 0.22, market_cap: 1800000000, price_change_percentage_24h: -0.5, image: 'https://s2.coinmarketcap.com/static/img/coins/64x64/4030.png' },
+      { id: 'solana', symbol: 'SOL', name: 'Solana', current_price: 135, market_cap: 58000000000, price_change_percentage_24h: 3.2, image: 'https://s2.coinmarketcap.com/static/img/coins/64x64/5426.png' }
+    ]
 
     return NextResponse.json({ 
-      error: errorMessage,
-      timestamp: Date.now()
-    }, { status: 500 })
+      data: fallbackData,
+      timestamp: Date.now(),
+      source: 'fallback',
+      currency: 'CHF',
+      error: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.message : 'Unknown error') : 'Service temporarily unavailable'
+    }, { status: 200 }) // Status 200 pour ne pas casser l'UX
   }
 }
 
@@ -118,7 +152,7 @@ export async function OPTIONS(request: NextRequest) {
   const headers = new Headers({
     'Access-Control-Allow-Methods': 'GET, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-    'Access-Control-Max-Age': '86400', // 24 heures
+    'Access-Control-Max-Age': '86400',
   })
 
   if (origin && allowedOrigins.includes(origin)) {

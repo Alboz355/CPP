@@ -1,41 +1,116 @@
-# Next.js
-.next/
-out/
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# Dependencies
-node_modules/
-.pnp/
+# dependencies
+/node_modules
+/.pnp
 .pnp.js
+.yarn/install-state.gz
 
-# TypeScript
-*.tsbuildinfo
+# testing
+/coverage
 
-# Jest
-.jest/
+# next.js
+/.next/
+/out/
 
-# Environments
-.env
-.env*.local
+# production
+/build
 
-# Logs
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
-
-# Local storage
+# misc
 .DS_Store
 *.pem
 
-# Vercel
-.vercel/
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
-# macOS
-.DS_Store
+# local env files
+.env*.local
+.env.local
+.env.production.local
+.env.development.local
 
-# Editor directories and files
-.idea
-.vscode
-*.iml
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# IDEs
+.vscode/
+.idea/
 *.swp
 *.swo
+
+# Logs
+logs
+*.log
+
+# Electron
+/dist/
+/electron-dist/
+
+# Capacitor
+/ios/App/App/public
+/android/app/src/main/assets/public
+
+# OS generated files
+.DS_Store?
+ehthumbs.db
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+
+# ============================================
+# SÉCURITÉ CRITIQUE - FICHIERS SENSIBLES
+# ============================================
+
+# Variables d'environnement (contiennent les clés API)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Fichiers de clés
+*.key
+*.pem
+*.p12
+*.p8
+*.mobileprovision
+
+# Données sensibles
+/backups/
+/keys/
+/secrets/
+*.secret
+
+# Logs qui peuvent contenir des données sensibles
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Fichiers de cache qui peuvent contenir des données
+.cache/
+*.cache
+.parcel-cache/
+
+# ============================================
+# IMPORTANT: VÉRIFIEZ AVANT CHAQUE COMMIT
+# ============================================
+# 
+# Assurez-vous que ces fichiers ne sont JAMAIS commités:
+# - .env.local (contient vos clés API réelles)
+# - Tout fichier contenant des clés ou secrets
+# - Données de test avec vraies adresses privées
+#
+# Commandes utiles avant commit:
+# git status
+# git diff --cached
+#

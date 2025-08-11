@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { BLOCKCYPHER_TOKEN, ETHERSCAN_API_KEY } from '@/lib/config'
+import { BLOCKCYPHER_TOKEN, INFURA_PROJECT_ID, ALGORAND_API_BASE, SOLANA_HTTP_URL } from '@/lib/config'
 
 // Rate limiting
 const rateLimit = new Map<string, { count: number; resetTime: number }>()
 const RATE_LIMIT_WINDOW = 60 * 1000 // 1 minute
-const MAX_REQUESTS_PER_WINDOW = 5 // Plus restrictif pour les données blockchain
+const MAX_REQUESTS_PER_WINDOW = 5
 
 function checkRateLimit(ip: string): boolean {
   const now = Date.now()
@@ -43,20 +43,23 @@ export async function GET(request: NextRequest) {
 
     // Validation des paramètres
     const { searchParams } = new URL(request.url)
-    const network = searchParams.get('network') // bitcoin, ethereum, etc.
+    const network = searchParams.get('network') // bitcoin, ethereum, algorand, solana
     const address = searchParams.get('address')
     
     if (!network || !address) {
-      return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 })
+      return NextResponse.json({ error: 'Missing required parameters: network and address' }, { status: 400 })
     }
 
-    // Validation basique de l'adresse pour prévenir les attaques
-    if (address.length > 100 || !/^[a-zA-Z0-9]+$/.test(address)) {
-      return NextResponse.json({ error: 'Invalid address format' }, { status: 400 })
+    // Validation de l'adresse selon le type de réseau
+    if (!isValidAddress(address, network)) {
+      return NextResponse.json({ error: 'Invalid address format for network' }, { status: 400 })
     }
+
+    console.log(`🔍 Récupération solde réel pour ${network.toUpperCase()}: ${address}`)
 
     let balance = '0'
-    let transactions = []
+    let transactions: any[] = []
+    let additionalInfo: any = {}
 
     try {
       switch (network.toLowerCase()) {
@@ -65,45 +68,126 @@ export async function GET(request: NextRequest) {
             throw new Error('Bitcoin API not configured')
           }
           
+          console.log('📡 Requête Bitcoin via BlockCypher...')
           const btcResponse = await fetch(
             `https://api.blockcypher.com/v1/btc/main/addrs/${address}/balance?token=${BLOCKCYPHER_TOKEN}`,
-            { next: { revalidate: 60 } } // Cache 1 minute
+            { next: { revalidate: 60 } }
           )
           
           if (btcResponse.ok) {
             const btcData = await btcResponse.json()
-            balance = (btcData.balance / 100000000).toString() // Satoshis to BTC
+            balance = (btcData.balance / 100000000).toString() // Satoshis vers BTC
+            additionalInfo = {
+              totalReceived: (btcData.total_received / 100000000).toString(),
+              totalSent: (btcData.total_sent / 100000000).toString(),
+              nTx: btcData.n_tx,
+              unconfirmedBalance: (btcData.unconfirmed_balance / 100000000).toString()
+            }
+            console.log(`✅ Bitcoin: ${balance} BTC (${btcData.n_tx} transactions)`)
           }
           break
 
         case 'ethereum':
-          if (!ETHERSCAN_API_KEY) {
+          if (!INFURA_PROJECT_ID) {
             throw new Error('Ethereum API not configured')
           }
           
+          console.log('📡 Requête Ethereum via Infura...')
           const ethResponse = await fetch(
-            `https://api.etherscan.io/api?module=account&action=balance&address=${address}&tag=latest&apikey=${ETHERSCAN_API_KEY}`,
-            { next: { revalidate: 60 } }
+            `https://mainnet.infura.io/v3/${INFURA_PROJECT_ID}`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                jsonrpc: '2.0',
+                method: 'eth_getBalance',
+                params: [address, 'latest'],
+                id: 1
+              }),
+              next: { revalidate: 60 }
+            }
           )
           
           if (ethResponse.ok) {
             const ethData = await ethResponse.json()
-            if (ethData.status === '1') {
-              balance = (parseInt(ethData.result) / Math.pow(10, 18)).toString() // Wei to ETH
+            if (ethData.result) {
+              const balanceWei = parseInt(ethData.result, 16)
+              balance = (balanceWei / Math.pow(10, 18)).toString() // Wei vers ETH
+              console.log(`✅ Ethereum: ${balance} ETH`)
+              
+              // Récupérer le nombre de transactions
+              const txCountResponse = await fetch(
+                `https://mainnet.infura.io/v3/${INFURA_PROJECT_ID}`,
+                {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    jsonrpc: '2.0',
+                    method: 'eth_getTransactionCount',
+                    params: [address, 'latest'],
+                    id: 2
+                  })
+                }
+              )
+              
+              if (txCountResponse.ok) {
+                const txCountData = await txCountResponse.json()
+                additionalInfo.nTx = parseInt(txCountData.result, 16)
+              }
             }
           }
           break
 
         case 'algorand':
-          // API publique Algorand - pas de clé nécessaire
+          console.log('📡 Requête Algorand via Nodely...')
           const algoResponse = await fetch(
-            `https://mainnet-api.4160.nodely.dev/v2/accounts/${address}`,
-            { next: { revalidate: 60 } }
+            `${ALGORAND_API_BASE}/v2/accounts/${address}`,
+            { 
+              headers: { 'Accept': 'application/json' },
+              next: { revalidate: 60 } 
+            }
           )
           
           if (algoResponse.ok) {
             const algoData = await algoResponse.json()
-            balance = (algoData.amount / 1000000).toString() // microAlgos to ALGO
+            balance = (algoData.amount / 1000000).toString() // microAlgos vers ALGO
+            additionalInfo = {
+              minBalance: (algoData['min-balance'] / 1000000).toString(),
+              rewardsBase: algoData['rewards-base'],
+              round: algoData.round,
+              status: algoData.status
+            }
+            console.log(`✅ Algorand: ${balance} ALGO (Round: ${algoData.round})`)
+          }
+          break
+
+        case 'solana':
+          console.log('📡 Requête Solana via Syndica...')
+          const solResponse = await fetch(
+            SOLANA_HTTP_URL,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                jsonrpc: '2.0',
+                id: 1,
+                method: 'getBalance',
+                params: [address]
+              }),
+              next: { revalidate: 60 }
+            }
+          )
+          
+          if (solResponse.ok) {
+            const solData = await solResponse.json()
+            if (solData.result && solData.result.value !== undefined) {
+              balance = (solData.result.value / Math.pow(10, 9)).toString() // Lamports vers SOL
+              additionalInfo = {
+                context: solData.result.context,
+                lamports: solData.result.value
+              }
+              console.log(`✅ Solana: ${balance} SOL`)
+            }
           }
           break
 
@@ -111,9 +195,12 @@ export async function GET(request: NextRequest) {
           return NextResponse.json({ error: 'Unsupported network' }, { status: 400 })
       }
     } catch (apiError) {
-      console.error(`API error for ${network}:`, apiError)
-      // Retourner 0 plutôt qu'une erreur pour éviter de casser l'UX
+      console.error(`❌ API error for ${network}:`, apiError)
+      // En cas d'erreur API, retourner 0 plutôt qu'une erreur pour ne pas casser l'UX
       balance = '0'
+      additionalInfo.error = process.env.NODE_ENV === 'development' ? 
+        (apiError instanceof Error ? apiError.message : 'Unknown API error') : 
+        'Temporary API issue'
     }
 
     // Headers de sécurité
@@ -129,16 +216,22 @@ export async function GET(request: NextRequest) {
       headers.set('Access-Control-Allow-Origin', origin)
     }
 
-    return NextResponse.json({ 
+    const response = {
       network,
       address,
       balance,
       transactions,
-      timestamp: Date.now()
-    }, { headers })
+      additionalInfo,
+      timestamp: Date.now(),
+      source: 'live-blockchain'
+    }
+
+    console.log(`📊 Réponse ${network}: balance=${balance}`)
+
+    return NextResponse.json(response, { headers })
 
   } catch (error) {
-    console.error('Erreur API blockchain:', error)
+    console.error('❌ Erreur API blockchain:', error)
     
     const errorMessage = process.env.NODE_ENV === 'development' 
       ? error instanceof Error ? error.message : 'Unknown error'
@@ -148,6 +241,32 @@ export async function GET(request: NextRequest) {
       error: errorMessage,
       timestamp: Date.now()
     }, { status: 500 })
+  }
+}
+
+// Fonction de validation des adresses
+function isValidAddress(address: string, network: string): boolean {
+  if (!address || address.length > 100) return false
+
+  switch (network.toLowerCase()) {
+    case 'bitcoin':
+      // Adresses Bitcoin (Legacy, SegWit, Native SegWit)
+      return /^([13][a-km-zA-HJ-NP-Z1-9]{25,34}|bc1[a-z0-9]{39,59})$/.test(address)
+    
+    case 'ethereum':
+      // Adresses Ethereum (hexadécimal avec 0x)
+      return /^0x[a-fA-F0-9]{40}$/.test(address)
+    
+    case 'algorand':
+      // Adresses Algorand (Base32, 58 caractères)
+      return /^[A-Z2-7]{58}$/.test(address)
+    
+    case 'solana':
+      // Adresses Solana (Base58, 32-44 caractères)
+      return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(address)
+    
+    default:
+      return false
   }
 }
 
