@@ -1,6 +1,6 @@
 export class OfflineManager {
   private static instance: OfflineManager
-  private isOnline = navigator.onLine
+  private isOnline = typeof navigator === 'undefined' ? true : navigator.onLine
   private listeners: ((online: boolean) => void)[] = []
   private cachedData: Map<string, any> = new Map()
 
@@ -17,6 +17,8 @@ export class OfflineManager {
   }
 
   private setupEventListeners() {
+    if (typeof window === 'undefined') return
+
     window.addEventListener('online', () => {
       this.isOnline = true
       this.notifyListeners(true)
@@ -29,6 +31,8 @@ export class OfflineManager {
   }
 
   private loadCachedData() {
+    if (typeof window === 'undefined') return
+
     try {
       const cached = localStorage.getItem('offline-cache')
       if (cached) {
@@ -43,6 +47,8 @@ export class OfflineManager {
   }
 
   private saveCachedData() {
+    if (typeof window === 'undefined') return
+
     try {
       const data: Record<string, any> = {}
       this.cachedData.forEach((value, key) => {
@@ -72,7 +78,7 @@ export class OfflineManager {
   cacheData(key: string, data: any) {
     this.cachedData.set(key, {
       data,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     })
     this.saveCachedData()
   }
@@ -92,6 +98,8 @@ export class OfflineManager {
 
   clearCache() {
     this.cachedData.clear()
-    localStorage.removeItem('offline-cache')
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('offline-cache')
+    }
   }
 }

@@ -71,7 +71,7 @@ export function TPEDashboard({ currentPage, onNavigate, onExitTPE, walletData }:
   )
 
   const renderTPEMenu = () => (
-    <div className="tpe-container min-h-screen bg-background dark:bg-background">
+    <div className="tpe-container min-h-screen bg-background dark:bg-background page-enter">
       {renderStatusBar()}
 
       <div className="p-6">

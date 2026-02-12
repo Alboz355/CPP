@@ -1,19 +1,28 @@
 // Secure storage utility for sensitive data
-// Uses IndexedDB with encryption for better security than localStorage
+// Uses IndexedDB with encryption for better security than plain localStorage
 
 import CryptoJS from 'crypto-js'
 
 const DB_NAME = 'CryptoWalletSecureStorage'
 const DB_VERSION = 1
 const STORE_NAME = 'secureData'
+const ENC_KEY_STORAGE_KEY = '__enc_key_v1'
 
-// Generate or retrieve encryption key
+const isBrowser = () =>
+  typeof window !== 'undefined' &&
+  typeof localStorage !== 'undefined' &&
+  typeof indexedDB !== 'undefined'
+
+// Generate or retrieve a persistent encryption key
 const getEncryptionKey = (): string => {
-  let key = sessionStorage.getItem('__enc_key')
+  if (!isBrowser()) return 'server-fallback-key'
+
+  let key = localStorage.getItem(ENC_KEY_STORAGE_KEY)
   if (!key) {
-    key = CryptoJS.lib.WordArray.random(256/8).toString()
-    sessionStorage.setItem('__enc_key', key)
+    key = CryptoJS.lib.WordArray.random(256 / 8).toString()
+    localStorage.setItem(ENC_KEY_STORAGE_KEY, key)
   }
+
   return key
 }
 
@@ -33,11 +42,16 @@ const decryptData = (encryptedData: string): string => {
 // IndexedDB operations
 const openDB = (): Promise<IDBDatabase> => {
   return new Promise((resolve, reject) => {
+    if (!isBrowser()) {
+      reject(new Error('IndexedDB unavailable'))
+      return
+    }
+
     const request = indexedDB.open(DB_NAME, DB_VERSION)
-    
+
     request.onerror = () => reject(request.error)
     request.onsuccess = () => resolve(request.result)
-    
+
     request.onupgradeneeded = (event) => {
       const db = (event.target as IDBOpenDBRequest).result
       if (!db.objectStoreNames.contains(STORE_NAME)) {
@@ -50,11 +64,13 @@ const openDB = (): Promise<IDBDatabase> => {
 export class SecureStorage {
   // Store sensitive data securely
   static async setItem(key: string, value: string): Promise<void> {
+    if (!isBrowser()) return
+
     try {
       const db = await openDB()
       const transaction = db.transaction([STORE_NAME], 'readwrite')
       const store = transaction.objectStore(STORE_NAME)
-      
+
       const encryptedValue = encryptData(value)
       await new Promise<void>((resolve, reject) => {
         const request = store.put({ key, value: encryptedValue })
@@ -63,7 +79,6 @@ export class SecureStorage {
       })
     } catch (error) {
       console.warn('SecureStorage: Failed to store data, falling back to encrypted localStorage', error)
-      // Fallback to encrypted localStorage
       const encryptedValue = encryptData(value)
       localStorage.setItem(`secure_${key}`, encryptedValue)
     }
@@ -71,24 +86,25 @@ export class SecureStorage {
 
   // Retrieve sensitive data securely
   static async getItem(key: string): Promise<string | null> {
+    if (!isBrowser()) return null
+
     try {
       const db = await openDB()
       const transaction = db.transaction([STORE_NAME], 'readonly')
       const store = transaction.objectStore(STORE_NAME)
-      
+
       const result = await new Promise<any>((resolve, reject) => {
         const request = store.get(key)
         request.onsuccess = () => resolve(request.result)
         request.onerror = () => reject(request.error)
       })
-      
+
       if (result) {
         return decryptData(result.value)
       }
       return null
     } catch (error) {
       console.warn('SecureStorage: Failed to retrieve data, falling back to encrypted localStorage', error)
-      // Fallback to encrypted localStorage
       const encryptedValue = localStorage.getItem(`secure_${key}`)
       if (encryptedValue) {
         try {
@@ -103,11 +119,13 @@ export class SecureStorage {
 
   // Remove sensitive data
   static async removeItem(key: string): Promise<void> {
+    if (!isBrowser()) return
+
     try {
       const db = await openDB()
       const transaction = db.transaction([STORE_NAME], 'readwrite')
       const store = transaction.objectStore(STORE_NAME)
-      
+
       await new Promise<void>((resolve, reject) => {
         const request = store.delete(key)
         request.onsuccess = () => resolve()
@@ -115,18 +133,19 @@ export class SecureStorage {
       })
     } catch (error) {
       console.warn('SecureStorage: Failed to remove data, falling back to localStorage', error)
-      // Fallback to localStorage
       localStorage.removeItem(`secure_${key}`)
     }
   }
 
   // Clear all secure data
   static async clear(): Promise<void> {
+    if (!isBrowser()) return
+
     try {
       const db = await openDB()
       const transaction = db.transaction([STORE_NAME], 'readwrite')
       const store = transaction.objectStore(STORE_NAME)
-      
+
       await new Promise<void>((resolve, reject) => {
         const request = store.clear()
         request.onsuccess = () => resolve()
@@ -134,17 +153,15 @@ export class SecureStorage {
       })
     } catch (error) {
       console.warn('SecureStorage: Failed to clear data, falling back to localStorage', error)
-      // Fallback: clear localStorage items with secure_ prefix
-      Object.keys(localStorage).forEach(key => {
-        if (key.startsWith('secure_')) {
-          localStorage.removeItem(key)
+      Object.keys(localStorage).forEach((storageKey) => {
+        if (storageKey.startsWith('secure_')) {
+          localStorage.removeItem(storageKey)
         }
       })
     }
   }
 }
 
-// Legacy fallback for environments where crypto-js is not available
 export class BasicSecureStorage {
   private static encode(value: string): string {
     return btoa(encodeURIComponent(value))
@@ -155,11 +172,13 @@ export class BasicSecureStorage {
   }
 
   static setItem(key: string, value: string): void {
+    if (typeof localStorage === 'undefined') return
     const encodedValue = this.encode(value)
     localStorage.setItem(`basic_secure_${key}`, encodedValue)
   }
 
   static getItem(key: string): string | null {
+    if (typeof localStorage === 'undefined') return null
     const encodedValue = localStorage.getItem(`basic_secure_${key}`)
     if (encodedValue !== null) {
       try {
@@ -172,11 +191,13 @@ export class BasicSecureStorage {
   }
 
   static removeItem(key: string): void {
+    if (typeof localStorage === 'undefined') return
     localStorage.removeItem(`basic_secure_${key}`)
   }
 
   static clear(): void {
-    Object.keys(localStorage).forEach(key => {
+    if (typeof localStorage === 'undefined') return
+    Object.keys(localStorage).forEach((key) => {
       if (key.startsWith('basic_secure_')) {
         localStorage.removeItem(key)
       }

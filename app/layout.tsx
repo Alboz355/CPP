@@ -1,5 +1,4 @@
 import type { Metadata, Viewport } from "next"
-import { Inter } from 'next/font/google'
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { LanguageProvider } from "@/contexts/language-context"
@@ -7,12 +6,10 @@ import { CurrencyProvider } from "@/contexts/currency-context"
 import { Toaster } from "@/components/ui/toaster"
 import { ObservabilityInit } from '@/components/observability-init'
 
-const inter = Inter({ subsets: ["latin"] })
-
 const isDev = process.env.NODE_ENV !== 'production'
 const csp = isDev
-  ? "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; img-src 'self' data: https: blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' ws: http: https:; worker-src 'self' blob:; base-uri 'self'; form-action 'self'"
-  : "default-src 'self'; script-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https:; worker-src 'self' blob:; base-uri 'self'; form-action 'self'"
+  ? "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; img-src 'self' data: https: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; connect-src 'self' ws: http: https:; worker-src 'self' blob:; base-uri 'self'; form-action 'self'"
+  : "default-src 'self'; script-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; connect-src 'self' https:; worker-src 'self' blob:; base-uri 'self'; form-action 'self'"
 
 export const metadata: Metadata = {
   title: "Crypto Wallet App - Portefeuille Crypto Sécurisé",
@@ -140,11 +137,8 @@ export default function RootLayout({
         <link rel="apple-touch-icon" sizes="180x180" href="/placeholder-logo.png" />
         <link rel="apple-touch-icon" sizes="167x167" href="/placeholder-logo.png" />
         
-        {/* Preconnect for performance */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       </head>
-      <body className={`${inter.className} antialiased`}>
+      <body className="antialiased">
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
