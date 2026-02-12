@@ -26,6 +26,7 @@ import { OfflineManager } from "@/lib/offline-manager"
 import { UserTypeSelection } from "@/components/user-type-selection"
 import { setPin as setHashedPin, verifyPin as verifyHashedPin } from "@/lib/pin-utils"
 import type { WalletData } from "@/lib/wallet-utils"
+import { setMnemonic } from "@/lib/wallet-real"
 
 export type AppState =
   | "onboarding"
@@ -47,6 +48,16 @@ export type AppState =
   | "tpe-statistics"
   | "user-selection"
   | "auth"
+
+
+
+function sanitizeWalletForStorage(wallet: WalletData): WalletData {
+  const { mnemonic: _mnemonic, ...rest } = wallet as WalletData & { mnemonic?: string }
+  return {
+    ...rest,
+    mnemonic: "",
+  }
+}
 
 export default function CryptoWalletApp() {
   const [currentPage, setCurrentPage] = useState<AppState>("onboarding")
@@ -100,6 +111,13 @@ export default function CryptoWalletApp() {
         if (existingWallet && hasCompletedOnboarding && savedUserType && hasSeenPresentation && hasPinHash) {
           try {
             const parsed = JSON.parse(existingWallet)
+
+            if (parsed?.mnemonic) {
+              await setMnemonic(parsed.mnemonic)
+              localStorage.setItem("wallet-data", JSON.stringify(sanitizeWalletForStorage(parsed)))
+              parsed.mnemonic = ""
+            }
+
             setWalletData(parsed)
             setUserType(savedUserType)
             
@@ -132,6 +150,11 @@ export default function CryptoWalletApp() {
           if (existingWallet) {
             try {
               const parsed = JSON.parse(existingWallet)
+              if (parsed?.mnemonic) {
+                await setMnemonic(parsed.mnemonic)
+                localStorage.setItem("wallet-data", JSON.stringify(sanitizeWalletForStorage(parsed)))
+                parsed.mnemonic = ""
+              }
               setWalletData(parsed)
             } catch (error) {
               console.error("Erreur parsing wallet:", error)
@@ -227,7 +250,12 @@ export default function CryptoWalletApp() {
       console.log("💰 Wallet created:", { selectedUserType })
       setWalletData(wallet)
       setUserType(selectedUserType)
-      localStorage.setItem("wallet-data", JSON.stringify(wallet))
+
+      if (wallet?.mnemonic) {
+        void setMnemonic(wallet.mnemonic)
+      }
+
+      localStorage.setItem("wallet-data", JSON.stringify(sanitizeWalletForStorage(wallet)))
       localStorage.setItem("user-type", selectedUserType)
       navigateToPage("pin-setup")
     } catch (error) {

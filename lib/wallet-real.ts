@@ -31,6 +31,10 @@ export async function getMnemonic(): Promise<string | null> {
   return await getSecret(SECRET_SEED_KEY)
 }
 
+export async function setMnemonic(mnemonic: string): Promise<void> {
+  await setSecret(SECRET_SEED_KEY, mnemonic)
+}
+
 export async function deriveAddresses(mnemonic: string): Promise<RealWalletAddresses> {
   // ETH via ethers (BIP44 m/44'/60'/0'/0/0)
   const eth = HDNodeWallet.fromPhrase(mnemonic)

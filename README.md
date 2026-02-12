@@ -62,3 +62,28 @@ This is a crypto wallet application built with Next.js, React, and Shadcn UI.
 -   `ed25519-hd-key` for Algorand key derivation
 -   CoinGecko API for real-time prices
 -   Mt Pelerin API for crypto purchases
+
+## Production Readiness
+
+### Critical fixes included
+
+- Removed dependency on online Google Fonts during build to avoid production build failures in restricted/offline CI environments.
+- Hardened browser-only storage managers (`SecureStorage`, `OfflineManager`) so they do not break during static generation or server-side rendering.
+- Added a typed storage layer (`lib/app-db.ts`) to validate and sort transaction history before UI rendering.
+- Added a default ESLint configuration to avoid blocking interactive prompts in CI/CD.
+
+### Deploy (static export)
+
+This project uses `output: "export"`, so deployment is static:
+
+```bash
+npm ci
+npm run build
+```
+
+Then publish the generated `out/` folder on any static host (Vercel static output, Netlify, Cloudflare Pages, S3+CloudFront, etc.).
+
+### Notes
+
+- `next.config.mjs` contains security headers, but static export hosts may require setting equivalent headers at CDN/hosting level.
+- For Electron, keep using the `electron` and `dist:*` scripts after `npm run build`.

@@ -11,6 +11,7 @@ import { Send, Download, ShoppingCart, CreditCard, Bell, Settings, ArrowUpRight,
 import { useLanguage } from '@/contexts/language-context'
 import { getTranslation } from '@/lib/i18n'
 import { formatBalance, formatCryptoAmount } from '@/lib/wallet-utils'
+import { loadRecentTransactions } from '@/lib/app-db'
 import { CryptoList } from './crypto-list'
 import { RealTimePrices } from './real-time-prices'
 import type { AppState } from '@/app/page'
@@ -104,23 +105,15 @@ export function MainDashboard({ userType, onNavigate, walletData, onShowMtPeleri
   }
 
   const recentTransactions = useMemo((): Transaction[] => {
-    // Récupérer les vraies transactions depuis localStorage
     try {
-      const history = localStorage.getItem('transaction-history')
-      if (history) {
-        const parsed = JSON.parse(history)
-        // Prendre les 3 dernières transactions
-        return parsed
-          .slice(0, 3)
-          .map((tx: any) => ({
-            ...tx,
-            timestamp: new Date(tx.timestamp)
-          }))
-      }
+      return loadRecentTransactions(3).map((tx: any) => ({
+        ...tx,
+        timestamp: new Date(tx.timestamp),
+      }))
     } catch (error) {
       console.error('Error loading recent transactions:', error)
+      return []
     }
-    return []
   }, [])
 
   const handleRefresh = useCallback(async () => {
@@ -172,7 +165,7 @@ export function MainDashboard({ userType, onNavigate, walletData, onShowMtPeleri
   }, [t.dashboard.transactions])
 
   return (
-    <div className="min-h-screen bg-[#F2F2F7] dark:bg-[#000000] ios-content-safe" role="main" aria-label="Tableau de bord principal">
+    <div className="min-h-screen bg-[#F2F2F7] dark:bg-[#000000] ios-content-safe page-enter" role="main" aria-label="Tableau de bord principal">
       {/* Focus Mode Toggle */}
       <button
         onClick={toggleFocusMode}

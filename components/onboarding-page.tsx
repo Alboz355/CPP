@@ -23,7 +23,7 @@ import {
 } from "lucide-react"
 import { UserTypeSelection } from "@/components/user-type-selection"
 import { generateWallet, importWallet, validateMnemonic } from "@/lib/wallet-utils"
-import { createOrLoadMnemonic, deriveAddresses } from "@/lib/wallet-real"
+import { createOrLoadMnemonic, deriveAddresses, setMnemonic } from "@/lib/wallet-real"
 import { useLanguage } from "@/contexts/language-context"
 
 export type UserType = "client" | "merchant"
@@ -138,8 +138,15 @@ export function OnboardingPage({ onWalletCreated }: OnboardingPageProps) {
     setSuccess(null)
 
     try {
-      // Enregistrer la mnemonic importée et dériver les adresses
-      const mnemonic = importSeedPhrase.trim()
+      // Valider et persister la mnemonic importée avant dérivation
+      const mnemonic = importSeedPhrase.trim().toLowerCase()
+      if (!validateMnemonic(mnemonic)) {
+        setError("Phrase de récupération invalide")
+        setIsCreating(false)
+        return
+      }
+
+      await setMnemonic(mnemonic)
       const addresses = await deriveAddresses(mnemonic)
 
       const walletData: WalletData = {
